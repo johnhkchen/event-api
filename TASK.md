@@ -1,49 +1,44 @@
-# Task: Complete Missing Hono Service Implementation  
-**Task ID:** REWORK-001  
-**Priority:** high  
-**Assignee:** agent-002  
-**Created:** 2025-08-13T03:32:10.401Z
+# Task: Implement Missing BAML Service
+**Task ID:** BACKFILL-004-VALIDATED  
+**Priority:** critical  
+**Assignee:** agent-001  
+**Created:** 2025-08-13T16:57:26.176Z
 
 ## Objective
-Implement critical missing functionality in Hono service based on REV-003 review findings. The service currently lacks the core web scraping engine and security features required for production use.
+Create BAML service for intelligent HTML data extraction that is completely missing
 
 ## Requirements
-- [x] Implement POST /api/scrape/luma endpoint with Playwright integration
-- [x] Add web scraping engine with retry logic and anti-detection measures
-- [x] Implement API key authentication system
-- [x] Add rate limiting middleware and security headers
-- [x] Fix TypeScript build configuration issues
-- [x] Create proper Dockerfile for containerization
-- [x] Expand test coverage for scraping and security features
-- [x] Add POST /api/events/batch/scrape for bulk operations
-- [x] Implement input validation and HTML sanitization
-- [x] Add comprehensive error handling for scraping operations
+- [ ] BAML service HTTP API with /extract endpoint
+- [ ] HTML parsing and structured data extraction
+- [ ] Integration with OpenAI API for content analysis
+- [ ] Response caching for identical HTML content
+- [ ] Error handling and validation
+- [ ] Rate limiting for OpenAI API calls
+- [ ] Structured output schemas for events, speakers, companies
+- [ ] Performance monitoring and logging
+- [ ] Docker containerization
 
 ## Files to Focus On
-- services/hono-api/src/scraping/
-- services/hono-api/src/api/scrape/
-- services/hono-api/src/middleware/
-- services/hono-api/src/auth/
-- services/hono-api/Dockerfile
-- services/hono-api/tests/
-- services/hono-api/tsconfig.json
+- services/baml-service/main.py
+- services/baml-service/schemas/
+- services/baml-service/requirements.txt
+- services/baml-service/Dockerfile
+- services/baml-service/Dockerfile.dev
+- services/baml-service/config/
 
 ## Dependencies
-- REV-003
-- PLAN-002
+None
 
 ## Labels
-rework, scraping, security, critical, P0
+critical, ai, extraction, missing-service, P0
 
 ## Status
 - [x] Task assigned and workspace created
-- [x] Development started
-- [x] Implementation complete
-- [x] Tests written
-- [x] Code reviewed
-- [x] Task complete
+- [ ] Development started
+- [ ] Implementation complete
+- [ ] Tests written
+- [ ] Code reviewed
+- [ ] Task complete
 
 ## Notes
-Auto-generated from kanban.yaml on 2025-08-13T03:32:10.401Z
-
-Previous BACKFILL-002 schema sync work also merged as part of this consolidation.
+Auto-generated from kanban.yaml on 2025-08-13T16:57:26.176Z
