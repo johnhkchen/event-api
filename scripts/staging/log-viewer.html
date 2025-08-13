@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event API - Staging Logs</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00ff00;
+        }
+        .log-container {
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .log-file {
+            margin-bottom: 15px;
+        }
+        .log-file h3 {
+            color: #ffff00;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+        .refresh-btn {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .refresh-btn:hover {
+            background-color: #005999;
+        }
+        .status {
+            color: #ffaa00;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Event API - Staging Environment Logs</h1>
+        <p class="status">Environment: Staging | Last Updated: <span id="timestamp"></span></p>
+        <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Logs</button>
+        <button class="refresh-btn" onclick="autoRefresh()">⏱️ Auto Refresh (30s)</button>
+    </div>
+
+    <div class="log-container">
+        <div class="log-file">
+            <h3>📋 Available Log Files</h3>
+            <p>This is a simple log viewer for staging environment.</p>
+            <p>In a production setup, this would be replaced with proper log aggregation tools like ELK stack or Grafana.</p>
+            <ul>
+                <li><a href="logs/app.log" style="color: #00ff00;">Application Logs</a></li>
+                <li><a href="logs/database.log" style="color: #00ff00;">Database Logs</a></li>
+                <li><a href="logs/nginx.log" style="color: #00ff00;">Nginx Access Logs</a></li>
+                <li><a href="logs/error.log" style="color: #ff6666;">Error Logs</a></li>
+            </ul>
+        </div>
+
+        <div class="log-file">
+            <h3>💡 Quick Actions</h3>
+            <p>• Check application health: <code>curl http://localhost:3001/health</code></p>
+            <p>• View container status: <code>docker-compose -f docker-compose.staging.yml ps</code></p>
+            <p>• Follow logs: <code>docker-compose -f docker-compose.staging.yml logs -f</code></p>
+        </div>
+
+        <div class="log-file">
+            <h3>🔧 Staging Configuration</h3>
+            <p>• Services running on ports: 3001 (API), 4001 (Elixir), 8081 (BAML), 8082 (Logs)</p>
+            <p>• Database: Port 5433 (staging)</p>
+            <p>• Debug endpoints enabled</p>
+            <p>• Rate limiting disabled</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        function autoRefresh() {
+            setInterval(() => {
+                location.reload();
+            }, 30000);
+            alert('Auto-refresh enabled (30 seconds)');
+        }
+    </script>
+</body>
+</html>
