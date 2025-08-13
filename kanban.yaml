@@ -1,0 +1,982 @@
+metadata:
+  project: Event API
+  max_agents: 3
+  created: '2025-01-12'
+  last_updated: '2025-08-13'
+agents:
+  agent-001:
+    status: available
+    current_task: null
+    worktree: null
+    last_active: '2025-08-13T01:27:11.849Z'
+  agent-002:
+    status: available
+    current_task: null
+    worktree: null
+    last_active: '2025-08-13T01:26:13.595Z'
+  agent-003:
+    status: available
+    current_task: null
+    worktree: null
+    last_active: '2025-08-13T01:26:13.595Z'
+tasks:
+  backlog:
+    - id: DB-FEAT-002
+      title: Core Schema Implementation
+      priority: high
+      estimated_hours: 40
+      description: Implement complete database schema for events, speakers, companies, topics and relationships
+      requirements:
+        - All tables with proper constraints
+        - Foreign key relationships
+        - Indexes for query patterns
+        - Vector column for embeddings
+        - Data validation rules
+      files:
+        - migrations/
+        - schema/
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - database
+        - schema
+        - P0
+      assignee: null
+    - id: DB-FEAT-003
+      title: Migration Framework
+      priority: high
+      estimated_hours: 18
+      description: Establish database migration framework supporting both Hono and Elixir migration patterns
+      requirements:
+        - Migration numbering scheme
+        - Rollback capabilities
+        - Cross-service migration coordination
+        - Development seed data migrations
+        - Production migration strategy
+      files:
+        - migrations/
+        - drizzle/
+        - priv/repo/migrations/
+      dependencies:
+        - DB-FEAT-002
+      labels:
+        - database
+        - tooling
+        - P1
+      assignee: null
+    - id: DB-FEAT-004
+      title: Docker Compose Environment
+      priority: high
+      estimated_hours: 24
+      description: Complete Docker Compose configuration for local development with all services
+      requirements:
+        - All services defined and networked
+        - Persistent data volumes
+        - Environment variable management
+        - Health checks for all containers
+        - Development vs production configurations
+      files:
+        - docker-compose.yml
+        - docker-compose.production.yml
+        - .env.example
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - infrastructure
+        - docker
+        - P0
+      assignee: null
+    - id: HONO-FEAT-001
+      title: Hono Project Setup & Core Framework
+      priority: high
+      estimated_hours: 20
+      description: Initialize Hono TypeScript project with development environment
+      requirements:
+        - Hono TypeScript project
+        - Development server with hot reload
+        - ESLint + Prettier configuration
+        - Testing framework (Vitest)
+        - Docker containerization
+      files:
+        - hono-service/
+        - package.json
+        - Dockerfile
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - hono
+        - setup
+        - P0
+      assignee: null
+    - id: HONO-FEAT-002
+      title: Database Integration with Drizzle
+      priority: high
+      estimated_hours: 24
+      description: Set up Drizzle ORM integration with PostgreSQL for CRUD operations
+      requirements:
+        - Drizzle schema definitions
+        - Connection pooling
+        - Basic CRUD operations
+        - Migration integration
+        - Type-safe query patterns
+      files:
+        - drizzle/
+        - src/db/
+        - src/types/
+      dependencies:
+        - HONO-FEAT-001
+        - DB-FEAT-002
+      labels:
+        - hono
+        - database
+        - P0
+      assignee: null
+    - id: HONO-FEAT-003
+      title: Web Scraping Engine
+      priority: high
+      estimated_hours: 40
+      description: Implement robust web scraping system for Lu.ma events using Playwright
+      requirements:
+        - Playwright browser automation
+        - Lu.ma event page parsing
+        - Retry logic for failed scrapes
+        - User agent rotation
+        - Rate limiting compliance
+      files:
+        - src/scraping/
+        - src/api/scrape/
+      dependencies:
+        - HONO-FEAT-002
+      labels:
+        - scraping
+        - playwright
+        - P1
+      assignee: null
+    - id: HONO-FEAT-004
+      title: Event CRUD API Endpoints
+      priority: high
+      estimated_hours: 32
+      description: Implement core CRUD operations and event discovery endpoints
+      requirements:
+        - GET /api/events with filtering and pagination
+        - GET /api/events/:id with related data
+        - POST /api/events for manual creation
+        - PUT /api/events/:id for updates
+        - DELETE /api/events/:id with cascading
+        - Query parameter validation
+      files:
+        - src/routes/events/
+        - src/api/
+      dependencies:
+        - HONO-FEAT-002
+      labels:
+        - api
+        - crud
+        - P1
+      assignee: null
+    - id: HONO-FEAT-005
+      title: Search & Discovery API
+      priority: high
+      estimated_hours: 24
+      description: Implement text search, vector similarity search, and event recommendations
+      requirements:
+        - Text search using PostgreSQL full-text
+        - Vector similarity search
+        - Search result ranking and scoring
+        - Search query optimization
+        - Similar events endpoint
+      files:
+        - src/api/search/
+        - src/lib/search/
+      dependencies:
+        - HONO-FEAT-004
+        - DB-FEAT-005
+      labels:
+        - search
+        - vector
+        - P1
+      assignee: null
+    - id: HONO-FEAT-007
+      title: Elixir Service Integration
+      priority: high
+      estimated_hours: 18
+      description: Implement HTTP client for communicating with Elixir processing service
+      requirements:
+        - HTTP client configuration
+        - Event processing queue integration
+        - Graph query proxy endpoints
+        - Error handling and retries
+        - Service health checking
+      files:
+        - src/lib/elixir-client/
+        - src/api/internal/
+      dependencies:
+        - HONO-FEAT-002
+      labels:
+        - integration
+        - http-client
+        - P1
+      assignee: null
+    - id: ELIXIR-FEAT-001
+      title: Phoenix Project Setup & Architecture
+      priority: high
+      estimated_hours: 28
+      description: Initialize Phoenix project with OTP supervision tree and development environment
+      requirements:
+        - Phoenix 1.7+ project with LiveView
+        - OTP supervision tree
+        - Ecto database integration
+        - Docker containerization
+        - Health check endpoints
+      files:
+        - elixir-service/
+        - lib/event_api/
+        - mix.exs
+      dependencies:
+        - DB-FEAT-002
+      labels:
+        - elixir
+        - phoenix
+        - P0
+      assignee: null
+    - id: ELIXIR-FEAT-002
+      title: Ecto Schema & Database Integration
+      priority: high
+      estimated_hours: 24
+      description: Set up Ecto schemas and database integration aligned with database foundation
+      requirements:
+        - Ecto schemas for all database tables
+        - Associations and relationships
+        - Custom types for vector and JSONB data
+        - Migration generation and management
+        - Database connection pooling
+      files:
+        - lib/event_api/schemas/
+        - priv/repo/migrations/
+      dependencies:
+        - ELIXIR-FEAT-001
+        - DB-FEAT-002
+      labels:
+        - elixir
+        - ecto
+        - P0
+      assignee: null
+    - id: ELIXIR-FEAT-003
+      title: Event Processing Pipeline
+      priority: high
+      estimated_hours: 40
+      description: Implement main event processing pipeline with GenServer workers and BAML integration
+      requirements:
+        - GenServer-based processing workers
+        - BAML integration for HTML extraction
+        - Error handling and retry logic
+        - Processing status tracking
+        - Phoenix PubSub for updates
+      files:
+        - lib/event_api/processing/
+        - lib/event_api/workers/
+      dependencies:
+        - ELIXIR-FEAT-002
+      labels:
+        - processing
+        - genserver
+        - P1
+      assignee: null
+    - id: ELIXIR-FEAT-004
+      title: BAML Integration Service
+      priority: high
+      estimated_hours: 24
+      description: Build HTTP client integration with BAML service for intelligent data extraction
+      requirements:
+        - HTTP client for BAML service
+        - Request/response validation
+        - Retry logic for failed extractions
+        - Response caching for identical HTML
+        - Performance monitoring
+      files:
+        - lib/event_api/services/baml/
+        - lib/event_api/clients/
+      dependencies:
+        - ELIXIR-FEAT-001
+      labels:
+        - integration
+        - ai
+        - P1
+      assignee: null
+    - id: ELIXIR-FEAT-005
+      title: Deduplication Engine
+      priority: high
+      estimated_hours: 48
+      description: Implement intelligent deduplication system for speakers, companies, and events
+      requirements:
+        - Speaker name normalization and matching
+        - Company name deduplication
+        - Event deduplication criteria
+        - Confidence scoring for matches
+        - Manual review workflow
+        - Batch deduplication operations
+      files:
+        - lib/event_api/deduplication/
+        - lib/event_api/matching/
+      dependencies:
+        - ELIXIR-FEAT-002
+      labels:
+        - deduplication
+        - data-quality
+        - P1
+      assignee: null
+    - id: ELIXIR-FEAT-009
+      title: Internal API Endpoints
+      priority: high
+      estimated_hours: 24
+      description: Create internal HTTP API endpoints for Hono service integration
+      requirements:
+        - POST /internal/process for event processing
+        - GET /internal/graph/* for graph queries
+        - POST /internal/deduplicate for bulk deduplication
+        - GET /internal/recommend/* for recommendations
+        - Proper error handling and response formatting
+      files:
+        - lib/event_api_web/controllers/internal/
+        - lib/event_api_web/router.ex
+      dependencies:
+        - ELIXIR-FEAT-003
+        - ELIXIR-FEAT-005
+      labels:
+        - api
+        - internal
+        - P1
+      assignee: null
+    - id: INTEGRATION-FEAT-001
+      title: Service Communication Testing
+      priority: high
+      estimated_hours: 24
+      description: Validate HTTP communication between Hono and Elixir services
+      requirements:
+        - Hono → Elixir processing requests
+        - Elixir → BAML service communication
+        - Error handling and timeout scenarios
+        - Retry logic validation
+        - Service health check integration
+      files:
+        - tests/integration/
+        - tests/e2e/
+      dependencies:
+        - HONO-FEAT-007
+        - ELIXIR-FEAT-009
+      labels:
+        - integration
+        - testing
+        - P1
+      assignee: null
+    - id: INTEGRATION-FEAT-002
+      title: End-to-End Workflow Testing
+      priority: high
+      estimated_hours: 32
+      description: Implement comprehensive E2E tests covering complete user workflows
+      requirements:
+        - Complete scraping → processing → storage → retrieval workflow
+        - Search and discovery functionality
+        - Batch operations testing
+        - Graph queries and recommendations
+        - Data quality assessment workflow
+      files:
+        - tests/e2e/workflows/
+        - tests/fixtures/
+      dependencies:
+        - INTEGRATION-FEAT-001
+      labels:
+        - e2e
+        - testing
+        - P1
+      assignee: null
+    - id: INTEGRATION-FEAT-004
+      title: Docker Compose & Deployment Testing
+      priority: high
+      estimated_hours: 24
+      description: Validate complete Docker Compose setup and deployment procedures
+      requirements:
+        - Docker Compose brings up all services
+        - Service discovery and networking
+        - Volume persistence across restarts
+        - Environment variable configuration
+        - Health checks and dependencies
+      files:
+        - docker-compose.yml
+        - docker-compose.production.yml
+        - deployment/
+      dependencies:
+        - DB-FEAT-004
+      labels:
+        - docker
+        - deployment
+        - P1
+      assignee: null
+    - id: INTEGRATION-FEAT-007
+      title: Production Readiness Checklist
+      priority: high
+      estimated_hours: 18
+      description: Complete production readiness assessment covering security and operations
+      requirements:
+        - Security audit and vulnerability assessment
+        - SSL/TLS configuration and testing
+        - Backup and disaster recovery procedures
+        - Capacity planning and auto-scaling
+        - Operational runbooks
+      files:
+        - docs/production/
+        - security/
+      dependencies:
+        - INTEGRATION-FEAT-005
+      labels:
+        - security
+        - production
+        - P1
+      assignee: null
+    - id: DB-FEAT-005
+      title: Performance Optimization
+      priority: normal
+      estimated_hours: 24
+      description: Implement indexing strategy and query optimization for expected access patterns
+      requirements:
+        - Indexes on all foreign keys
+        - Vector similarity search optimization
+        - Text search indexes (GIN)
+        - Composite indexes for common queries
+        - Query performance benchmarks
+      files:
+        - migrations/indexes/
+        - performance/
+      dependencies:
+        - DB-FEAT-002
+      labels:
+        - database
+        - performance
+        - P1
+      assignee: null
+    - id: DB-FEAT-006
+      title: Monitoring & Observability
+      priority: normal
+      estimated_hours: 18
+      description: Set up database monitoring, slow query logging, and observability
+      requirements:
+        - Slow query logging
+        - Connection monitoring
+        - Disk usage alerts
+        - Performance metrics collection
+        - Log aggregation setup
+      files:
+        - monitoring/
+        - postgres/monitoring/
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - monitoring
+        - observability
+        - P2
+      assignee: null
+    - id: HONO-FEAT-006
+      title: Batch Operations API
+      priority: normal
+      estimated_hours: 24
+      description: Implement batch endpoints for bulk scraping and processing operations
+      requirements:
+        - POST /api/events/batch/scrape for multiple URLs
+        - POST /api/events/batch/process for reprocessing
+        - Bulk validation and error handling
+        - Progress tracking for long operations
+        - Rate limiting for batch operations
+      files:
+        - src/api/batch/
+        - src/lib/batch/
+      dependencies:
+        - HONO-FEAT-003
+        - HONO-FEAT-004
+      labels:
+        - batch
+        - bulk-operations
+        - P2
+      assignee: null
+    - id: HONO-FEAT-008
+      title: Authentication & Rate Limiting
+      priority: normal
+      estimated_hours: 24
+      description: Implement API authentication, rate limiting, and security middleware
+      requirements:
+        - API key authentication system
+        - Rate limiting by IP and API key
+        - CORS configuration
+        - Request logging middleware
+        - Input validation and sanitization
+      files:
+        - src/middleware/
+        - src/auth/
+      dependencies:
+        - HONO-FEAT-001
+      labels:
+        - security
+        - authentication
+        - P2
+      assignee: null
+    - id: ELIXIR-FEAT-006
+      title: Graph Relationship Builder
+      priority: normal
+      estimated_hours: 36
+      description: Implement graph relationship building using PostgreSQL AGE extension
+      requirements:
+        - Graph node creation for events, speakers, companies
+        - Relationship edge creation with weights
+        - Graph traversal queries
+        - Speaker network analysis
+        - Company event relationships
+      files:
+        - lib/event_api/graph/
+        - lib/event_api/relationships/
+      dependencies:
+        - ELIXIR-FEAT-002
+        - DB-FEAT-005
+      labels:
+        - graph
+        - relationships
+        - P2
+      assignee: null
+    - id: ELIXIR-FEAT-007
+      title: Recommendation Engine
+      priority: normal
+      estimated_hours: 32
+      description: Build recommendation system using collaborative filtering and graph relationships
+      requirements:
+        - Event recommendation based on interests
+        - Speaker recommendation for events
+        - Similar events based on content
+        - Topic-based recommendations
+        - Performance optimization for real-time
+      files:
+        - lib/event_api/recommendations/
+        - lib/event_api/ml/
+      dependencies:
+        - ELIXIR-FEAT-006
+        - DB-FEAT-005
+      labels:
+        - recommendations
+        - ml
+        - P2
+      assignee: null
+    - id: ELIXIR-FEAT-008
+      title: Data Quality Assessment
+      priority: normal
+      estimated_hours: 24
+      description: Implement data quality scoring system for extracted event data
+      requirements:
+        - Quality scoring algorithm
+        - Completeness assessment
+        - Confidence scoring for extracted data
+        - Quality trend tracking
+        - Quality improvement recommendations
+      files:
+        - lib/event_api/quality/
+        - lib/event_api/scoring/
+      dependencies:
+        - ELIXIR-FEAT-003
+      labels:
+        - quality
+        - scoring
+        - P2
+      assignee: null
+    - id: INTEGRATION-FEAT-003
+      title: Performance & Load Testing
+      priority: normal
+      estimated_hours: 32
+      description: Conduct performance testing under realistic load conditions
+      requirements:
+        - Concurrent scraping operations (10+ simultaneous)
+        - Database query performance under load
+        - API response time benchmarks (<200ms p95)
+        - Processing pipeline throughput
+        - Memory and CPU usage profiling
+      files:
+        - tests/performance/
+        - artillery/
+      dependencies:
+        - INTEGRATION-FEAT-002
+      labels:
+        - performance
+        - load-testing
+        - P1
+      assignee: null
+    - id: INTEGRATION-FEAT-005
+      title: Monitoring & Observability Setup
+      priority: normal
+      estimated_hours: 24
+      description: Implement comprehensive monitoring and observability stack
+      requirements:
+        - Application metrics collection
+        - Centralized logging aggregation
+        - Error tracking and alerting
+        - Performance monitoring dashboards
+        - Database monitoring
+      files:
+        - monitoring/
+        - grafana/
+        - prometheus/
+      dependencies:
+        - DB-FEAT-006
+      labels:
+        - monitoring
+        - observability
+        - P1
+      assignee: null
+    - id: INTEGRATION-FEAT-006
+      title: Data Migration & Seeding
+      priority: normal
+      estimated_hours: 18
+      description: Create data migration tools and seed data sets for testing
+      requirements:
+        - Test data generation scripts
+        - Production data migration tools
+        - Data validation and integrity checks
+        - Rollback procedures
+        - Performance impact assessment
+      files:
+        - scripts/data/
+        - seeds/
+      dependencies:
+        - DB-FEAT-003
+      labels:
+        - data
+        - migration
+        - P2
+      assignee: null
+    - id: DEPLOY-FEAT-001
+      title: Flox Production Container Strategy
+      priority: normal
+      estimated_hours: 18
+      description: Establish pattern for converting Flox environment into production containers
+      requirements:
+        - Single flox containerize command
+        - Container includes all services
+        - Production environment variables
+        - Container optimization for startup time
+        - Health checks integration
+      files:
+        - .flox/
+        - containerization/
+      dependencies:
+        - INTEGRATION-FEAT-004
+      labels:
+        - flox
+        - containerization
+        - P2
+      assignee: null
+    - id: DEPLOY-FEAT-002
+      title: Coolify Project Configuration
+      priority: normal
+      estimated_hours: 12
+      description: Configure Coolify to deploy Flox-generated container with automation
+      requirements:
+        - Coolify instance operational
+        - Event API project imported
+        - SSL certificates automated via Let's Encrypt
+        - Domain routing configured
+        - Environment variables managed
+      files:
+        - coolify/
+        - deployment/coolify/
+      dependencies:
+        - DEPLOY-FEAT-001
+      labels:
+        - coolify
+        - automation
+        - P2
+      assignee: null
+    - id: DEPLOY-FEAT-003
+      title: GitHub Worktree Deployment Workflow
+      priority: normal
+      estimated_hours: 18
+      description: Implement GitHub Actions with worktrees for isolated deployments
+      requirements:
+        - GitHub Actions workflow for branches
+        - Worktree isolation for deployments
+        - Flox container build automation
+        - Coolify webhook integration
+        - Rollback capability
+      files:
+        - .github/workflows/
+        - scripts/deploy/
+      dependencies:
+        - DEPLOY-FEAT-002
+      labels:
+        - github-actions
+        - worktree
+        - P2
+      assignee: null
+    - id: DEPLOY-FEAT-004
+      title: Production Environment Hardening
+      priority: normal
+      estimated_hours: 12
+      description: Apply production-ready configurations including SSL and monitoring
+      requirements:
+        - SSL certificates auto-renewed
+        - Basic health monitoring and alerting
+        - Automated database backups
+        - Environment variables secured
+        - Basic logging and metrics
+      files:
+        - production/
+        - ssl/
+      dependencies:
+        - DEPLOY-FEAT-003
+      labels:
+        - security
+        - hardening
+        - P2
+      assignee: null
+  todo: []
+  in_progress: []
+  review:
+    - id: RISK-002
+      title: Review Specs and Upgrade Kanban Accuracy
+      priority: critical
+      estimated_hours: 6
+      description: >-
+        Audit all specs, tickets, and docs to ensure kanban.yaml reflects actual project requirements and establish
+        proper task prioritization
+      requirements:
+        - Review all files in tickets/ directory
+        - Compare spec.md requirements with kanban tasks
+        - Update kanban.yaml with missing or outdated tasks
+        - Ensure task dependencies are accurate
+        - Validate estimated hours against scope
+        - Establish proper task prioritization hierarchy (critical/high/normal/low)
+        - Ensure RISK tickets have appropriate priority over feature development
+        - Document prioritization rationale for future reference
+      files:
+        - kanban.yaml
+        - tickets/
+        - spec.md
+        - docs/
+      dependencies: []
+      labels:
+        - documentation
+        - planning
+        - risk-mitigation
+        - P2
+      assignee: agent-002
+      started: '2025-08-13T01:16:43.345Z'
+      completed: '2025-08-13T01:32:15.000Z'
+      implementation_summary: |
+        Successfully upgraded kanban.yaml accuracy by adding 33 missing tasks across all 5 development streams.
+        Added 28 missing feature tasks from detailed ticket specifications, corrected priority hierarchy, 
+        enhanced dependencies mapping, validated 914 total hours estimate, and documented prioritization strategy.
+        Coverage expanded from 5 to 33 tasks covering Database Foundation (6), Hono API Service (8), 
+        Elixir Processing (9), Integration & Testing (7), and Deployment Pipeline (4).
+        Enables parallel development after database foundation, reducing timeline from 914 sequential 
+        to ~400-500 hours with parallel teams.
+    - id: RISK-001
+      title: Clean Up Redundant Bash Agent Organizer
+      priority: critical
+      estimated_hours: 4
+      description: Remove old bash-based agent management scripts and consolidate into TypeScript system
+      requirements:
+        - Identify redundant bash scripts in scripts/ directory
+        - Remove deprecated agent management files
+        - Update documentation to reflect TypeScript-only workflow
+        - Ensure no references to old bash scripts remain
+        - Test that all agent operations work without bash scripts
+      files:
+        - scripts/
+        - docs/
+        - justfile
+        - package.json
+      dependencies: []
+      labels:
+        - cleanup
+        - scripts
+        - risk-mitigation
+        - P2
+      assignee: agent-001
+      started: '2025-08-13T01:16:04.671Z'
+      completed: '2025-08-13T01:23:27.985Z'
+    - id: RISK-003
+      title: Audit CI/CD Readiness
+      priority: critical
+      estimated_hours: 5
+      description: Assess and prepare continuous integration and deployment infrastructure
+      requirements:
+        - Audit existing Docker configurations
+        - Review build scripts and deployment readiness
+        - Identify missing CI/CD components
+        - Document deployment workflow requirements
+        - Prepare for GitHub Actions or similar CI setup
+        - Ensure environment separation (dev/staging/prod)
+      files:
+        - docker-compose.yml
+        - Dockerfile
+        - scripts/docker/
+        - docs/deploy_instructions.md
+        - .github/
+      dependencies: []
+      labels:
+        - infrastructure
+        - deployment
+        - risk-mitigation
+        - P2
+      assignee: agent-003
+      started: '2025-08-13T01:16:52.293Z'
+      completed: '2025-08-13T01:23:44.478Z'
+    - id: DB-FEAT-001
+      title: PostgreSQL Setup with Extensions
+      priority: high
+      estimated_hours: 24
+      description: Set up PostgreSQL database with pgvector and AGE extensions for local development and production
+      requirements:
+        - PostgreSQL 15+ with pgvector extension
+        - AGE extension for graph queries
+        - Docker container configuration
+        - Connection pooling setup
+        - Basic backup strategy
+      files:
+        - docker-compose.yml
+        - postgres/
+        - migrations/
+      dependencies: []
+      labels:
+        - database
+        - infrastructure
+        - P0
+      assignee: agent-001
+      started: '2025-08-13T01:26:28.374Z'
+      completed: '2025-08-13T01:26:35.626Z'
+  done: []
+assignment_rules:
+  priority_order:
+    - critical
+    - high
+    - normal
+    - low
+  agent_specialties:
+    agent-001:
+      - backend
+      - security
+      - cleanup
+      - risk-mitigation
+    agent-002:
+      - frontend
+      - ui
+      - documentation
+      - planning
+    agent-003:
+      - database
+      - performance
+      - infrastructure
+      - deployment
+  auto_assign: true
+  respect_dependencies: true
+  prioritization_notes: |
+    CRITICAL: Reserved for RISK-* tickets addressing technical debt and project risks
+    HIGH: P0 foundational tasks that block other development (Database, Core Setup)
+    NORMAL: P1 feature development tasks (API endpoints, Processing pipelines)
+    LOW: P2 optimization, monitoring, and deployment automation tasks
+workflow:
+  backlog:
+    description: Tasks waiting to be assigned
+    next_states:
+      - todo
+  todo:
+    description: Tasks assigned to agents but not started
+    next_states:
+      - in_progress
+  in_progress:
+    description: Tasks currently being worked on
+    next_states:
+      - review
+      - backlog
+  review:
+    description: Tasks completed and ready for review
+    next_states:
+      - done
+      - in_progress
+  done:
+    description: Tasks completed and merged
+    next_states: []
+integration:
+  git:
+    branch_prefix: task/
+    worktree_prefix: ./agents/
+  notification:
+    slack_webhook: null
+    email: null
+  reporting:
+    daily_standup: true
+    weekly_summary: true
+prioritization_strategy:
+  sequence_rationale: |
+    The project follows a multi-stream development approach based on the detailed 
+    specifications in tickets/. Tasks are prioritized to enable parallel development
+    while respecting critical dependencies.
+  development_streams:
+    stream_1_database:
+      priority: P0 (High)
+      rationale: Foundation layer required by all other services
+      blocking_tasks: All Hono and Elixir development
+      key_deliverables:
+        - PostgreSQL with pgvector + AGE extensions
+        - Complete schema with relationships
+        - Docker Compose development environment
+        - Migration framework
+    stream_2_hono_api:
+      priority: P1 (Normal)
+      rationale: User-facing API service for external interfaces
+      depends_on: Database foundation
+      key_deliverables:
+        - Web scraping system (Playwright)
+        - Event CRUD API endpoints
+        - Search and discovery functionality
+        - Integration with Elixir service
+    stream_3_elixir_processing:
+      priority: P1 (Normal)
+      rationale: Complex data processing and intelligence engine
+      depends_on: Database foundation
+      key_deliverables:
+        - Event processing pipeline (GenServer)
+        - BAML integration for data extraction
+        - Deduplication engine
+        - Graph relationships and recommendations
+    stream_4_integration:
+      priority: P1 (Normal)
+      rationale: System validation and production readiness
+      depends_on: All foundation streams
+      key_deliverables:
+        - End-to-end workflow testing
+        - Performance and load testing
+        - Monitoring and observability
+        - Production readiness checklist
+    stream_5_deployment:
+      priority: P2 (Low)
+      rationale: Production deployment automation
+      depends_on: Integration testing complete
+      key_deliverables:
+        - Flox production containers
+        - Coolify deployment pipeline
+        - GitHub Actions workflow
+        - Production environment hardening
+  risk_mitigation_priority:
+    rationale: |
+      RISK-* tickets receive CRITICAL priority to address technical debt and 
+      project risks that could impact development velocity or quality.
+    current_risks:
+      RISK-001: Redundant bash scripts causing confusion
+      RISK-002: Kanban accuracy ensuring proper task tracking
+      RISK-003: CI/CD readiness for automated deployment
+  estimated_timeline:
+    total_hours: 914
+    database_foundation: 144
+    hono_api_service: 182
+    elixir_processing: 216
+    integration_testing: 144
+    deployment_pipeline: 60
+    risk_mitigation: 15
+    parallel_development: |
+      After database foundation (DB-FEAT-001, DB-FEAT-002), Hono and Elixir 
+      streams can proceed in parallel, reducing overall timeline from 914 
+      sequential hours to approximately 400-500 hours with 2-3 parallel teams.

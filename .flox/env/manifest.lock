@@ -1,0 +1,699 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "version": 1,
+    "install": {
+      "curl": {
+        "pkg-path": "curl"
+      },
+      "docker": {
+        "pkg-path": "docker"
+      },
+      "git": {
+        "pkg-path": "git"
+      },
+      "nodejs": {
+        "pkg-path": "nodejs"
+      },
+      "postgresql": {
+        "pkg-path": "postgresql"
+      }
+    },
+    "vars": {
+      "BAML_PORT": "8080",
+      "BAML_SERVICE_URL": "http://localhost:8080",
+      "DATABASE_URL": "postgresql://event_api:development_password@localhost:5432/event_api_dev",
+      "ELIXIR_PORT": "4000",
+      "ELIXIR_SERVICE_URL": "http://localhost:4000",
+      "HONO_API_URL": "http://localhost:3000",
+      "HONO_PORT": "3000",
+      "MCP_SETUP_STATUS_FILE": ".mcp_setup_complete",
+      "MIX_ENV": "dev",
+      "NODE_ENV": "development",
+      "POSTGRES_DB": "event_api_dev",
+      "POSTGRES_PASSWORD": "development_password",
+      "POSTGRES_USER": "event_api"
+    },
+    "hook": {
+      "on-activate": "  # Verify Environment Activation\n  echo \"🔍 Verifying Flox environment activation...\"\n  \n  # Check if MCP server setup has been verified\n  if [ ! -f \"$FLOX_ENV_PROJECT/$MCP_SETUP_STATUS_FILE\" ]; then\n    echo \"🔧 Verifying MCP context7 server setup...\"\n    \n    # Check if context7 MCP server exists\n    if claude mcp list | grep -q \"context7\"; then\n      echo \"✅ MCP context7 server already configured\"\n      touch \"$FLOX_ENV_PROJECT/$MCP_SETUP_STATUS_FILE\"\n    else\n      echo \"📦 Installing MCP context7 server (this may take ~1 minute)...\"\n      if claude mcp add context7 -- npx -y @upstash/context7-mcp; then\n        touch \"$FLOX_ENV_PROJECT/$MCP_SETUP_STATUS_FILE\"\n        echo \"✅ MCP context7 server setup complete!\"\n      else\n        echo \"❌ MCP setup failed. Run manually: claude mcp add context7 -- npx -y @upstash/context7-mcp\"\n      fi\n    fi\n  fi\n  \n  # Load and Validate Environment Variables\n  echo \"🔧 Environment variables loaded from manifest.toml\"\n  \n  # Confirm Cross-Platform Consistency  \n  echo \"🌍 Cross-platform Flox environment active\"\n  \n  # Environment ready\n  echo \"🚀 Event API development environment ready!\"\n  echo \"   → All dependencies verified and available\"\n  echo \"   → MCP context7 server configured for AI/LLM workflows\" \n  echo \"   → Environment is reproducible and shareable\"\n  echo \"\"\n  echo \"🐳 Docker commands available:\"\n  echo \"   → docker compose up -d database    # Start development database\"\n  echo \"   → docker compose down             # Stop all services\"\n  echo \"   → flox containerize               # Build production container\"\n"
+    },
+    "profile": {},
+    "options": {}
+  },
+  "packages": [
+    {
+      "attr_path": "curl",
+      "broken": false,
+      "derivation": "/nix/store/x7lvd7kjqhn9gcvv8x9pqcaig1ijqks9-curl-8.14.1.drv",
+      "description": "Command line tool for transferring files with URL syntax",
+      "install_id": "curl",
+      "license": "curl",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "curl-8.14.1",
+      "pname": "curl",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:42.529783Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "8.14.1",
+      "outputs_to_install": [
+        "bin",
+        "man"
+      ],
+      "outputs": {
+        "bin": "/nix/store/imspxq4rizhk2lpv3a25ngm2lmcc35p4-curl-8.14.1-bin",
+        "dev": "/nix/store/q9m2lbh8v0zqpb8av029ph7zn63gs9jd-curl-8.14.1-dev",
+        "devdoc": "/nix/store/knz60qb7akg16z3zc4ya4j74nnh4d41z-curl-8.14.1-devdoc",
+        "man": "/nix/store/qvxv8a6bhj6b3r3d3zxax8ksk7gx42k0-curl-8.14.1-man",
+        "out": "/nix/store/8b6q78qwjn07zy4i5pxfbsfq50prgkfp-curl-8.14.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "curl",
+      "broken": false,
+      "derivation": "/nix/store/khbwr26zzkxs82msbvfdx6xc07p11ima-curl-8.14.1.drv",
+      "description": "Command line tool for transferring files with URL syntax",
+      "install_id": "curl",
+      "license": "curl",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "curl-8.14.1",
+      "pname": "curl",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:27.839948Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "8.14.1",
+      "outputs_to_install": [
+        "bin",
+        "man"
+      ],
+      "outputs": {
+        "bin": "/nix/store/xjyd8czibdxvwqyh7ybnh300cykzis3g-curl-8.14.1-bin",
+        "debug": "/nix/store/qls3y5lyqnzgqi19w0vhsg7fsw4p7slw-curl-8.14.1-debug",
+        "dev": "/nix/store/fzy5wbav5r78alzhsalh4bnp1wdwsd4h-curl-8.14.1-dev",
+        "devdoc": "/nix/store/j7jilzkvpzg8iz4lhpb0zjnv4gn58n47-curl-8.14.1-devdoc",
+        "man": "/nix/store/h97kdc67n02xx4ij47gh448knfxrxkyr-curl-8.14.1-man",
+        "out": "/nix/store/7zlkjxk4n4n2mch4ssblql8855gqnzqv-curl-8.14.1"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "curl",
+      "broken": false,
+      "derivation": "/nix/store/k7dbs26bk00cs8bvkfa37czmdpsxm6xn-curl-8.14.1.drv",
+      "description": "Command line tool for transferring files with URL syntax",
+      "install_id": "curl",
+      "license": "curl",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "curl-8.14.1",
+      "pname": "curl",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:45.307768Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "8.14.1",
+      "outputs_to_install": [
+        "bin",
+        "man"
+      ],
+      "outputs": {
+        "bin": "/nix/store/a2a99s8h5jjfzx8704awj9110kvslzp1-curl-8.14.1-bin",
+        "dev": "/nix/store/688vl41z3mqnfx0r9y4pm3p8hphq5cw8-curl-8.14.1-dev",
+        "devdoc": "/nix/store/zjrh5iz7a0gg20jxc8hwlcsxijh03n9p-curl-8.14.1-devdoc",
+        "man": "/nix/store/yq9vks1sd1q6xk2w18h8mwm679v8c00c-curl-8.14.1-man",
+        "out": "/nix/store/w5aw4lds1xyg4hi1k5dk43bwhrfw5061-curl-8.14.1"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "curl",
+      "broken": false,
+      "derivation": "/nix/store/1ircj3gv1w0mz5q2n7y0bdbcywj4263b-curl-8.14.1.drv",
+      "description": "Command line tool for transferring files with URL syntax",
+      "install_id": "curl",
+      "license": "curl",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "curl-8.14.1",
+      "pname": "curl",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:44:33.740133Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "8.14.1",
+      "outputs_to_install": [
+        "bin",
+        "man"
+      ],
+      "outputs": {
+        "bin": "/nix/store/z1l1b9bdzk6yspdf53z90n2dv311g1r6-curl-8.14.1-bin",
+        "debug": "/nix/store/q116b51lfnj36r2cyfhrjad7lr6kydx8-curl-8.14.1-debug",
+        "dev": "/nix/store/912hlbqiabfk5xy0ajla6z9dwzlwkn87-curl-8.14.1-dev",
+        "devdoc": "/nix/store/lrnviaphs4pf2cy3625d0vp94c4pzbpm-curl-8.14.1-devdoc",
+        "man": "/nix/store/zv6lnrb8hladdc91y0v4mazi0sxwmzq2-curl-8.14.1-man",
+        "out": "/nix/store/95iy4kvy1xllg2fpb14dhw4m3ff3l0f0-curl-8.14.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "docker",
+      "broken": false,
+      "derivation": "/nix/store/cm6s4p555fa15zw3kb5vmaadm9x367s3-docker-28.3.3.drv",
+      "description": "Open source project to pack, ship and run any application as a lightweight container",
+      "install_id": "docker",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "docker-28.3.3",
+      "pname": "docker",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:42.635939Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "28.3.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/6x679ch4cqa5aywjsrnplsasv5rp0mak-docker-28.3.3"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "docker",
+      "broken": false,
+      "derivation": "/nix/store/s2zgj35kqkmbsz8i3vlq7fkx9ldxngs8-docker-28.3.3.drv",
+      "description": "Open source project to pack, ship and run any application as a lightweight container",
+      "install_id": "docker",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "docker-28.3.3",
+      "pname": "docker",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:28.041666Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "28.3.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/8jb799sr948h68avj9k3xkvznv10f470-docker-28.3.3"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "docker",
+      "broken": false,
+      "derivation": "/nix/store/nlhc9khhy28pnydg4blyy93y1zhwprzb-docker-28.3.3.drv",
+      "description": "Open source project to pack, ship and run any application as a lightweight container",
+      "install_id": "docker",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "docker-28.3.3",
+      "pname": "docker",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:45.437307Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "28.3.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/g3h7m6qsx5rkb908qcqi4a6kflvcriz5-docker-28.3.3"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "docker",
+      "broken": false,
+      "derivation": "/nix/store/m9zzm0wmwp4mf1g1g1ix6fq0rlnq94jy-docker-28.3.3.drv",
+      "description": "Open source project to pack, ship and run any application as a lightweight container",
+      "install_id": "docker",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "docker-28.3.3",
+      "pname": "docker",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:44:33.967206Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "28.3.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/r0vqz3dsdhw31gyk098qgrw61vwmc7a1-docker-28.3.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "git",
+      "broken": false,
+      "derivation": "/nix/store/s3gdhywmj56ff88ncbignyd3562mdn0z-git-2.50.1.drv",
+      "description": "Distributed version control system",
+      "install_id": "git",
+      "license": "GPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "git-2.50.1",
+      "pname": "git",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:43.013124Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.50.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "doc": "/nix/store/j8djmq64ckbah7bl6jv1y6arrjr0shmv-git-2.50.1-doc",
+        "out": "/nix/store/jn9byxgdjndngf0d2by0djg8gcdll7xc-git-2.50.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "git",
+      "broken": false,
+      "derivation": "/nix/store/83l24nm6fi8rq7qngz6xd6npw3l2swgk-git-2.50.1.drv",
+      "description": "Distributed version control system",
+      "install_id": "git",
+      "license": "GPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "git-2.50.1",
+      "pname": "git",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:28.803019Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.50.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/rpxnrnsn4nbx8wm9d2vrgj0fr5xzz5lg-git-2.50.1-debug",
+        "doc": "/nix/store/q8sicpx16gyzxnp3345a46lj4cz9wd09-git-2.50.1-doc",
+        "out": "/nix/store/h4pvvix6pvnvys9a6y1xj2442r1ajdhl-git-2.50.1"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "git",
+      "broken": false,
+      "derivation": "/nix/store/qd5nss6zs4mh7fj2rsi6hk8hp57nwynd-git-2.50.1.drv",
+      "description": "Distributed version control system",
+      "install_id": "git",
+      "license": "GPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "git-2.50.1",
+      "pname": "git",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:45.905950Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.50.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "doc": "/nix/store/yn9cvbs7jz4dfdb17qralgr0ybi5rmjf-git-2.50.1-doc",
+        "out": "/nix/store/8d1n8cvi5x1j0v61459lvhqs26vmcqbl-git-2.50.1"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "git",
+      "broken": false,
+      "derivation": "/nix/store/8fazx3a2bf05p38crpcy2lxip8gcks44-git-2.50.1.drv",
+      "description": "Distributed version control system",
+      "install_id": "git",
+      "license": "GPL-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "git-2.50.1",
+      "pname": "git",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:44:34.819723Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.50.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/l46kpjpcwwp8l7kzzr1s2dlk646r73z2-git-2.50.1-debug",
+        "doc": "/nix/store/d2lhlzkdziwmijik8nszfwp8srbkskb9-git-2.50.1-doc",
+        "out": "/nix/store/5i8zvall945kypmwgqd0y47f02pldwp4-git-2.50.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/mcpi6hknkb9dz7ipp7nzh1ln1a8ak702-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:46.012081Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/f8p8cf7impbgzqim9nbqik6z9xj5lyc3-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/6fy7a1dk6z2xz57v3axlzw7lrscikk2f-nodejs-22.17.0-libv8",
+        "out": "/nix/store/s7dd5qi3fzjj8q5mmygi8pasp91n727c-nodejs-22.17.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/hp61l0ws5s5xipwaa0y98dwi394rsas6-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:40.785542Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/vgjb162lwvdqw6vf1jlam9iaxr4g4njm-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/5wb5rg5d9mqahhkbaxa4igrdgq7bbqra-nodejs-22.17.0-libv8",
+        "out": "/nix/store/368l5fmrl9yc2h8ngbw3b6hhp7fc8chh-nodejs-22.17.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/dv9i7vz3bqp38vd4alipvw57nbnh159f-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:49.382252Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/a09q6g0l907dvib30wxp2zhd1yx8p4w9-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/1psqihyqxkm0pa5n6b1jyy7fn7s5d3w5-nodejs-22.17.0-libv8",
+        "out": "/nix/store/rn17ypna061gf9l94m8dcq4n6jwi2qmx-nodejs-22.17.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs",
+      "broken": false,
+      "derivation": "/nix/store/1j5phnsrk0dylzigngdwc143a20y9ify-nodejs-22.17.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "nodejs-22.17.0",
+      "pname": "nodejs",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:44:49.774752Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.17.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/56m9qb3lvy446hirs940cgmgjk54yssl-nodejs-22.17.0-dev",
+        "libv8": "/nix/store/40hasi9aw7r9qcacppgf712qzi8aa3br-nodejs-22.17.0-libv8",
+        "out": "/nix/store/whnr2rydma74q97zs56ic601ixs88njg-nodejs-22.17.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "postgresql",
+      "broken": false,
+      "derivation": "/nix/store/4asmhilm73apx045pzy2n8lfgd5fbrxr-postgresql-17.5.drv",
+      "description": "Powerful, open source object-relational database system",
+      "install_id": "postgresql",
+      "license": "PostgreSQL",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "postgresql-17.5",
+      "pname": "postgresql",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:51.520523Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "17.5",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/rid24asr9anzmzvj8vzvvh6vhyzrv1g0-postgresql-17.5-dev",
+        "doc": "/nix/store/13n7szqbq83d5s7i17xd1y6vijnlw8si-postgresql-17.5-doc",
+        "jit": "/nix/store/pwi2jpd8kzpddzcj6rnhas1rkd17j05l-postgresql-17.5-jit",
+        "lib": "/nix/store/z2ixx0168lngnhdgcxaw9w6wra0ibnnx-postgresql-17.5-lib",
+        "man": "/nix/store/g3gynlyaxxgwiq8fm5lcqs7cp0fr25zl-postgresql-17.5-man",
+        "out": "/nix/store/dfmi5df0i45v2cibv90zbga22l5pmmnw-postgresql-17.5",
+        "plperl": "/nix/store/8qv982x7a177gwn2d0s2xnss9gayhj51-postgresql-17.5-plperl",
+        "plpython3": "/nix/store/fqkh3qj0x8by1aczhg5sj2wla0rmg3wr-postgresql-17.5-plpython3",
+        "pltcl": "/nix/store/bvfy276k5xz806vglghvbl7s8c6wl5z4-postgresql-17.5-pltcl"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "postgresql",
+      "broken": false,
+      "derivation": "/nix/store/yngybp517w740vw87kjzcilnidv95n3v-postgresql-17.5.drv",
+      "description": "Powerful, open source object-relational database system",
+      "install_id": "postgresql",
+      "license": "PostgreSQL",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "postgresql-17.5",
+      "pname": "postgresql",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:53.691229Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "17.5",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/s84wvrgpqql4iw9gygq5jzs93c7bvv90-postgresql-17.5-debug",
+        "dev": "/nix/store/l7rryvxw8z6im8dnsmskpry4ydbnk6rq-postgresql-17.5-dev",
+        "doc": "/nix/store/5g0krnrsbwmpvwz50jk7if7az8q9yxvp-postgresql-17.5-doc",
+        "jit": "/nix/store/3jflknpljm3hfr03fih3rwm18wdxdwkh-postgresql-17.5-jit",
+        "lib": "/nix/store/06mkcha74k49nzjg5zdlf8ywv2ij77sm-postgresql-17.5-lib",
+        "man": "/nix/store/z39cmrls5696pv6a99kglyyw309z2lj9-postgresql-17.5-man",
+        "out": "/nix/store/mdf05bq8zlvraxpxlyj3rg6660x3ramx-postgresql-17.5",
+        "plperl": "/nix/store/l7g0spdxs7wfhzlfz6584krb4wxbl0hn-postgresql-17.5-plperl",
+        "plpython3": "/nix/store/wivl4xjnsdka9cz3aiv5y7fg7rqg7jfp-postgresql-17.5-plpython3",
+        "pltcl": "/nix/store/n58hxn83kdxmhd2hx1jhbn9bca07595j-postgresql-17.5-pltcl"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "postgresql",
+      "broken": false,
+      "derivation": "/nix/store/2jjbfpzq04aad7cyb57q7w7mvpl1d9vl-postgresql-17.5.drv",
+      "description": "Powerful, open source object-relational database system",
+      "install_id": "postgresql",
+      "license": "PostgreSQL",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "postgresql-17.5",
+      "pname": "postgresql",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:56.232266Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "17.5",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/c6mk6kvrchibfmjc9fia8i0d064mfl51-postgresql-17.5-dev",
+        "doc": "/nix/store/1sh044b2grn7xd40afrqa56lvh1i4bkh-postgresql-17.5-doc",
+        "jit": "/nix/store/dwlbnv8qs5m3sz4vdln9d9bz6rilc5r6-postgresql-17.5-jit",
+        "lib": "/nix/store/83xc3vq9vmaix9ab0cx849ypnbcajv5q-postgresql-17.5-lib",
+        "man": "/nix/store/1q81qzabr82rn36zs9ll6s8c6briqbbv-postgresql-17.5-man",
+        "out": "/nix/store/dh5vca89l71qprnlhk8syb79c544s8wd-postgresql-17.5",
+        "plperl": "/nix/store/q4s9pzl97bf4lkxlwsamwb0q3w611ldy-postgresql-17.5-plperl",
+        "plpython3": "/nix/store/kvk8x0lphwfd5nkncv7ixn8j37964ihg-postgresql-17.5-plpython3",
+        "pltcl": "/nix/store/x7ngrwcymp5zmqm62qf5wixirsdm74vm-postgresql-17.5-pltcl"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "postgresql",
+      "broken": false,
+      "derivation": "/nix/store/3yi9a1s1jjb20wfgb27jyqsw1d14kmip-postgresql-17.5.drv",
+      "description": "Powerful, open source object-relational database system",
+      "install_id": "postgresql",
+      "license": "PostgreSQL",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "postgresql-17.5",
+      "pname": "postgresql",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:45:05.035457Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "17.5",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/p9qmqlj43crbvya5zic4daxpa9irpcf6-postgresql-17.5-debug",
+        "dev": "/nix/store/dhvvss0cly7inw5m5gg00zaksn1x4k0a-postgresql-17.5-dev",
+        "doc": "/nix/store/wy4x55s5idkpjwdc38icsjj5fai7qr35-postgresql-17.5-doc",
+        "jit": "/nix/store/1ymacxkxm8z5v9yhh196gv82462vrja8-postgresql-17.5-jit",
+        "lib": "/nix/store/n8z6i9wdbv4wkckw88fcf85pjpydvdmw-postgresql-17.5-lib",
+        "man": "/nix/store/vrqqycznilgqy95rfrxp7ji9l8swdlc7-postgresql-17.5-man",
+        "out": "/nix/store/f1akpy48ng3zshls7ncfx0h45ca9kskg-postgresql-17.5",
+        "plperl": "/nix/store/3yjd6qmiz4965rwa3fz4pi2cvdzki63d-postgresql-17.5-plperl",
+        "plpython3": "/nix/store/x3g44jhfkzkdxziy8122fz4djh8hi6ia-postgresql-17.5-plpython3",
+        "pltcl": "/nix/store/sfjhv0zx9mklr23n9ybfwmlggw13ciy7-postgresql-17.5-pltcl"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}

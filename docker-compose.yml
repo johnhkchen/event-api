@@ -1,0 +1,60 @@
+# Event API - Development Environment
+# This compose file is for local development with external database
+# Production uses `flox containerize` to create unified containers for Coolify
+
+services:
+  # Database service for development
+  # In production, this may be externally managed
+  database:
+    image: pgvector/pgvector:pg15
+    container_name: event-api-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-event_api_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-event_api}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-development_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-event_api} -d ${POSTGRES_DB:-event_api_dev}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - event-api-network
+
+  # Development proxy for testing service integration
+  # In production, services run within the Flox container
+  dev-proxy:
+    image: nginx:alpine
+    container_name: event-api-proxy
+    ports:
+      - "3000:3000"  # Hono API
+      - "4000:4000"  # Elixir Service
+      - "8080:8080"  # BAML Service
+    volumes:
+      - ./scripts/docker/dev-nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - database
+    networks:
+      - event-api-network
+    profiles:
+      - dev-proxy
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  event-api-network:
+    driver: bridge
+    name: event-api-network
+
+# Environment variables can be set in .env file:
+# POSTGRES_DB=event_api_dev
+# POSTGRES_USER=event_api  
+# POSTGRES_PASSWORD=development_password
+# DB_PORT=5432

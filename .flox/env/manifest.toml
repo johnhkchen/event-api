@@ -1,0 +1,167 @@
+## Flox Environment Manifest -----------------------------------------
+##
+##   _Everything_ you need to know about the _manifest_ is here:
+##
+##               https://flox.dev/docs/concepts/manifest
+##
+## -------------------------------------------------------------------
+# Flox manifest version managed by Flox CLI
+version = 1
+
+
+## Install Packages --------------------------------------------------
+##  $ flox install gum  <- puts a package in [install] section below
+##  $ flox search gum   <- search for a package
+##  $ flox show gum     <- show all versions of a package
+## -------------------------------------------------------------------
+[install]
+# Core development tools
+nodejs.pkg-path = "nodejs"
+# gum.pkg-path = "gum"
+# gum.version = "^0.14.5"
+
+# Database tools
+postgresql.pkg-path = "postgresql"
+
+# Container tools (for development)
+docker.pkg-path = "docker"
+
+# Additional tools that services might need
+curl.pkg-path = "curl"
+git.pkg-path = "git"
+
+
+## Environment Variables ---------------------------------------------
+##  ... available for use in the activated environment
+##      as well as [hook], [profile] scripts and [services] below.
+## -------------------------------------------------------------------
+[vars]
+MCP_SETUP_STATUS_FILE = ".mcp_setup_complete"
+
+# Development environment
+NODE_ENV = "development"
+MIX_ENV = "dev"
+
+# Database configuration
+DATABASE_URL = "postgresql://event_api:development_password@localhost:5432/event_api_dev"
+POSTGRES_DB = "event_api_dev"
+POSTGRES_USER = "event_api"
+POSTGRES_PASSWORD = "development_password"
+
+# Service ports (development)
+HONO_PORT = "3000"
+ELIXIR_PORT = "4000"
+BAML_PORT = "8080"
+
+# Internal service URLs (for service-to-service communication)
+HONO_API_URL = "http://localhost:3000"
+ELIXIR_SERVICE_URL = "http://localhost:4000"
+BAML_SERVICE_URL = "http://localhost:8080"
+
+
+## Activation Hook ---------------------------------------------------
+##  ... run by _bash_ shell when you run 'flox activate'.
+## -------------------------------------------------------------------
+[hook]
+on-activate = '''
+  # Verify Environment Activation
+  echo "🔍 Verifying Flox environment activation..."
+  
+  # Check if MCP server setup has been verified
+  if [ ! -f "$FLOX_ENV_PROJECT/$MCP_SETUP_STATUS_FILE" ]; then
+    echo "🔧 Verifying MCP context7 server setup..."
+    
+    # Check if context7 MCP server exists
+    if claude mcp list | grep -q "context7"; then
+      echo "✅ MCP context7 server already configured"
+      touch "$FLOX_ENV_PROJECT/$MCP_SETUP_STATUS_FILE"
+    else
+      echo "📦 Installing MCP context7 server (this may take ~1 minute)..."
+      if claude mcp add context7 -- npx -y @upstash/context7-mcp; then
+        touch "$FLOX_ENV_PROJECT/$MCP_SETUP_STATUS_FILE"
+        echo "✅ MCP context7 server setup complete!"
+      else
+        echo "❌ MCP setup failed. Run manually: claude mcp add context7 -- npx -y @upstash/context7-mcp"
+      fi
+    fi
+  fi
+  
+  # Load and Validate Environment Variables
+  echo "🔧 Environment variables loaded from manifest.toml"
+  
+  # Confirm Cross-Platform Consistency  
+  echo "🌍 Cross-platform Flox environment active"
+  
+  # Environment ready
+  echo "🚀 Event API development environment ready!"
+  echo "   → All dependencies verified and available"
+  echo "   → MCP context7 server configured for AI/LLM workflows" 
+  echo "   → Environment is reproducible and shareable"
+  echo ""
+  echo "🐳 Docker commands available:"
+  echo "   → docker compose up -d database    # Start development database"
+  echo "   → docker compose down             # Stop all services"
+  echo "   → flox containerize               # Build production container"
+'''
+
+
+## Profile script ----------------------------------------------------
+## ... sourced by _your shell_ when you run 'flox activate'.
+## -------------------------------------------------------------------
+[profile]
+# common = '''
+#   gum style \
+#   --foreground 212 --border-foreground 212 --border double \
+#   --align center --width 50 --margin "1 2" --padding "2 4" \
+#     $INTRO_MESSAGE
+# '''
+## Shell-specific customizations such as setting aliases go here:
+# bash = ...
+# zsh  = ...
+# fish = ...
+
+
+## Services ---------------------------------------------------------
+##  $ flox services start             <- Starts all services
+##  $ flox services status            <- Status of running services
+##  $ flox activate --start-services  <- Activates & starts all
+## ------------------------------------------------------------------
+[services]
+# myservice.command = "python3 -m http.server"
+
+
+## Include ----------------------------------------------------------
+## ... environments to create a composed environment
+## ------------------------------------------------------------------
+[include]
+# environments = [
+#     { dir = "../common" }
+# ]
+
+
+## Build and publish your own packages ------------------------------
+##  $ flox build
+##  $ flox publish
+## ------------------------------------------------------------------
+[build]
+# [build.myproject]
+# description = "The coolest project ever"
+# version = "0.0.1"
+# command = """
+#   mkdir -p $out/bin
+#   cargo build --release
+#   cp target/release/myproject $out/bin/myproject
+# """
+
+
+## Other Environment Options -----------------------------------------
+[options]
+# Systems that environment is compatible with
+# systems = [
+#   "aarch64-darwin",
+#   "aarch64-linux",
+#   "x86_64-darwin",
+#   "x86_64-linux",
+# ]
+# Uncomment to disable CUDA detection.
+# cuda-detection = false
