@@ -3,7 +3,7 @@
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgvector";
+CREATE EXTENSION IF NOT EXISTS "vector";
 
 -- Check if AGE extension is available and install if possible
 -- AGE may need to be installed separately depending on the PostgreSQL image
