@@ -1,24 +1,38 @@
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { serve } from '@hono/node-server';
 import { checkDatabaseConnection, closeDatabaseConnection } from './db/connection.ts';
 import eventsRoutes from './routes/events.ts';
 import internalRoutes from './api/internal/index.js';
+import scrapeRoutes from './api/scrape/index.js';
 import { elixirClient } from './lib/elixir-client/client.js';
+import { 
+  productionSecurity, 
+  developmentSecurity, 
+  inputSanitization, 
+  contentTypeValidation,
+  requestSizeLimit,
+  secureCors 
+} from './middleware/security.js';
+import { standardRateLimit } from './middleware/rate-limit.js';
+import { logApiUsage, requireApiKey } from './middleware/auth.js';
 
 // Create Hono app
 const app = new Hono();
 
-// Middleware
-app.use('*', cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'], // Add your frontend URLs
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
-  credentials: true
-}));
+// Security middleware
+app.use('*', process.env.NODE_ENV === 'production' ? productionSecurity : developmentSecurity);
+app.use('*', secureCors(['https://yourdomain.com'])); // Add your production domains
+app.use('*', requestSizeLimit(10 * 1024 * 1024)); // 10MB limit
+app.use('*', contentTypeValidation);
+app.use('*', inputSanitization);
 
+// Logging and monitoring
 app.use('*', logger());
+app.use('*', logApiUsage);
+
+// Rate limiting for all routes
+app.use('*', standardRateLimit);
 
 // Health check endpoint
 app.get('/health', async (c) => {
@@ -32,8 +46,14 @@ app.get('/health', async (c) => {
   }, dbHealthy ? 200 : 503);
 });
 
-// API routes
+// API routes (public endpoints)
 app.route('/api/events', eventsRoutes);
+
+// Protected API routes (require authentication)
+app.use('/api/scrape/*', requireApiKey);
+app.route('/api/scrape', scrapeRoutes);
+
+app.use('/internal/*', requireApiKey);
 app.route('/internal', internalRoutes);
 
 // 404 handler
