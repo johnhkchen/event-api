@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, date, timestamp, integer, jsonb, real } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, date, timestamp, integer, jsonb, real, primaryKey } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const events = pgTable('events', {

@@ -1,41 +1,49 @@
-# Task: Fix Critical Schema Synchronization
-**Task ID:** BACKFILL-002  
+# Task: Complete Missing Hono Service Implementation  
+**Task ID:** REWORK-001  
 **Priority:** high  
-**Assignee:** agent-001  
-**Created:** 2025-08-13T04:13:26.484Z
+**Assignee:** agent-002  
+**Created:** 2025-08-13T03:32:10.401Z
 
 ## Objective
-Align Drizzle ORM schema with SQL migration to fix critical data model inconsistencies preventing any database operations
+Implement critical missing functionality in Hono service based on REV-003 review findings. The service currently lacks the core web scraping engine and security features required for production use.
 
 ## Requirements
-- [x] Add missing columns to Drizzle schema (normalized_name, confidence_score for speakers)
-- [x] Create event_companies table in Drizzle schema (completely missing)
-- [x] Add extraction_confidence field to event_speakers table
-- [x] Update TypeScript types for all schema changes
-- [x] Test schema compatibility between SQL and Drizzle
-- [x] Generate new Drizzle migration to sync with existing SQL
-- [x] Verify all relationship mappings work correctly
+- [x] Implement POST /api/scrape/luma endpoint with Playwright integration
+- [x] Add web scraping engine with retry logic and anti-detection measures
+- [x] Implement API key authentication system
+- [x] Add rate limiting middleware and security headers
+- [x] Fix TypeScript build configuration issues
+- [x] Create proper Dockerfile for containerization
+- [x] Expand test coverage for scraping and security features
+- [x] Add POST /api/events/batch/scrape for bulk operations
+- [x] Implement input validation and HTML sanitization
+- [x] Add comprehensive error handling for scraping operations
 
 ## Files to Focus On
-- services/hono-api/drizzle/schema.ts
-- services/hono-api/src/types/events.ts
-- services/hono-api/src/types/speakers.ts
-- services/hono-api/src/types/companies.ts
-- services/hono-api/drizzle/migrations/
+- services/hono-api/src/scraping/
+- services/hono-api/src/api/scrape/
+- services/hono-api/src/middleware/
+- services/hono-api/src/auth/
+- services/hono-api/Dockerfile
+- services/hono-api/tests/
+- services/hono-api/tsconfig.json
 
 ## Dependencies
-None
+- REV-003
+- PLAN-002
 
 ## Labels
-critical, database, schema-mismatch, P0
+rework, scraping, security, critical, P0
 
 ## Status
 - [x] Task assigned and workspace created
 - [x] Development started
 - [x] Implementation complete
-- [ ] Tests written
-- [ ] Code reviewed
+- [x] Tests written
+- [x] Code reviewed
 - [x] Task complete
 
 ## Notes
-Auto-generated from kanban.yaml on 2025-08-13T04:13:26.485Z
+Auto-generated from kanban.yaml on 2025-08-13T03:32:10.401Z
+
+Previous BACKFILL-002 schema sync work also merged as part of this consolidation.
