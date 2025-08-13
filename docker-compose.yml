@@ -54,7 +54,7 @@ services:
   hono-dev:
     build:
       context: .
-      dockerfile: services/hono/Dockerfile.dev
+      dockerfile: services/hono-api/Dockerfile.dev
     container_name: event-api-hono-dev
     ports:
       - "3001:3000"
@@ -79,7 +79,7 @@ services:
   elixir-dev:
     build:
       context: .
-      dockerfile: services/elixir/Dockerfile.dev
+      dockerfile: services/elixir_service/Dockerfile.dev
     container_name: event-api-elixir-dev
     ports:
       - "4001:4000"
@@ -104,7 +104,7 @@ services:
   baml-dev:
     build:
       context: .
-      dockerfile: services/baml/Dockerfile.dev
+      dockerfile: services/baml-service/Dockerfile.dev
     container_name: event-api-baml-dev
     ports:
       - "8081:8080"

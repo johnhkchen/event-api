@@ -1,0 +1,47 @@
+FROM elixir:1.17
+
+# Install build dependencies
+RUN apt-get update -y && apt-get install -y \
+    build-essential \
+    git \
+    nodejs \
+    npm \
+    curl \
+    inotify-tools \
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# Set development environment
+ENV MIX_ENV=dev
+
+# Create and change to the app directory
+WORKDIR /app
+
+# Install Hex and Rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Copy manifest files first for better Docker layer caching
+COPY services/elixir_service/mix.exs services/elixir_service/mix.lock ./
+
+# Install dependencies
+RUN mix deps.get
+
+# Copy configuration files
+COPY services/elixir_service/config ./config/
+
+# Copy assets for Phoenix
+COPY services/elixir_service/assets/package*.json ./assets/
+RUN npm --prefix ./assets install
+
+# Copy source code (will be mounted in development)
+COPY services/elixir_service/ .
+
+# Install assets dependencies and compile assets
+RUN mix assets.setup 2>/dev/null || true
+RUN mix assets.build 2>/dev/null || true
+
+# Expose port
+EXPOSE 4000
+
+# Use development server with hot reload
+CMD ["mix", "phx.server"]

@@ -28,8 +28,7 @@
     "postgres": "^3.4.0",
     "uuid": "^9.0.0",
     "zod": "^3.22.4",
-    "@hono/cors": "^2.0.0",
-    "@hono/rate-limiter": "^0.6.0",
+    "hono-rate-limiter": "^0.4.2",
     "dompurify": "^3.0.8",
     "jsdom": "^23.2.0"
   },
