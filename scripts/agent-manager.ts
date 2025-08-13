@@ -407,26 +407,26 @@ default:
   }
 
   private createTaskFile(agentDir: string, task: Task, agentId: string): void {
-    const taskContent = `# Task: ${task.title}
+    const taskContent = `# Task: ${task.title || 'Unnamed Task'}
 **Task ID:** ${task.id}  
-**Priority:** ${task.priority}  
+**Priority:** ${task.priority || 'normal'}  
 **Assignee:** ${agentId}  
 **Created:** ${new Date().toISOString()}
 
 ## Objective
-${task.description}
+${task.description || 'No description provided'}
 
 ## Requirements
-${task.requirements.map(req => `- [ ] ${req}`).join('\n')}
+${task.requirements && task.requirements.length > 0 ? task.requirements.map(req => `- [ ] ${req}`).join('\n') : '- [ ] Define requirements'}
 
 ## Files to Focus On
-${task.files.map(file => `- ${file}`).join('\n')}
+${task.files && task.files.length > 0 ? task.files.map(file => `- ${file}`).join('\n') : '- No specific files identified'}
 
 ## Dependencies
-${task.dependencies.length > 0 ? task.dependencies.map(dep => `- ${dep}`).join('\n') : 'None'}
+${task.dependencies && task.dependencies.length > 0 ? task.dependencies.map(dep => `- ${dep}`).join('\n') : 'None'}
 
 ## Labels
-${task.labels.join(', ')}
+${task.labels && task.labels.length > 0 ? task.labels.join(', ') : 'No labels'}
 
 ## Status
 - [x] Task assigned and workspace created
@@ -745,6 +745,13 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
             console.log(`Task: ${chalk.yellow(taskInfo.id)} - ${taskInfo.title}`);
           }
           console.log(`Workspace: ${chalk.green(resolve(process.cwd(), worktreePath))}`);
+          console.log('');
+          console.log(chalk.bold.yellow('🎯 NEXT STEPS FOR CLAUDE CODE:'));
+          console.log('----------------------------------------------------------------');
+          console.log(chalk.cyan(`cd ${worktreePath}`));
+          console.log(chalk.cyan('cat TASK.md'));
+          console.log(chalk.cyan('just work'));
+          console.log('----------------------------------------------------------------');
           return;
         }
       } catch (error) {
@@ -769,6 +776,13 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
       console.log(`Agent: ${chalk.green(agentId)}`);
       console.log(`Task: ${chalk.yellow(task.id)} - ${task.title}`);
       console.log(`Workspace: ${chalk.green(resolve(process.cwd(), worktreePath))}`);
+      console.log('');
+      console.log(chalk.bold.yellow('🎯 NEXT STEPS FOR CLAUDE CODE:'));
+      console.log('----------------------------------------------------------------');
+      console.log(chalk.cyan(`cd ${worktreePath}`));
+      console.log(chalk.cyan('cat TASK.md'));
+      console.log(chalk.cyan('just work'));
+      console.log('----------------------------------------------------------------');
       
     } else {
       this.error('No agent ID specified for setup');
@@ -1093,6 +1107,15 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     this.saveKanban();
     this.success(`Task ${taskId} marked as complete and moved to review`);
     this.log(`Agent ${agentId} is now available for new tasks`);
+    
+    console.log('');
+    console.log(chalk.bold.yellow('🧹 CLEANUP INSTRUCTIONS FOR CLAUDE CODE:'));
+    console.log('----------------------------------------------------------------');
+    console.log(chalk.cyan('cd ../..  # Return to project root'));
+    console.log(chalk.cyan(`just cleanup ${agentId}  # Clean up your workspace`));
+    console.log('----------------------------------------------------------------');
+    console.log('');
+    console.log(chalk.green(`✅ Task ${taskId} complete! Ready for cleanup and next assignment.`));
   }
 
   async setTaskPriority(taskId: string, newPriority: string): Promise<void> {

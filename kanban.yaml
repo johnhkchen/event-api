@@ -8,40 +8,19 @@ agents:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T01:27:11.849Z'
+    last_active: '2025-08-13T01:55:42.517Z'
   agent-002:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T01:26:13.595Z'
+    last_active: '2025-08-13T02:58:37.660Z'
   agent-003:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T01:26:13.595Z'
+    last_active: '2025-08-13T02:58:38.038Z'
 tasks:
   backlog:
-    - id: DB-FEAT-002
-      title: Core Schema Implementation
-      priority: high
-      estimated_hours: 40
-      description: Implement complete database schema for events, speakers, companies, topics and relationships
-      requirements:
-        - All tables with proper constraints
-        - Foreign key relationships
-        - Indexes for query patterns
-        - Vector column for embeddings
-        - Data validation rules
-      files:
-        - migrations/
-        - schema/
-      dependencies:
-        - DB-FEAT-001
-      labels:
-        - database
-        - schema
-        - P0
-      assignee: null
     - id: DB-FEAT-003
       title: Migration Framework
       priority: high
@@ -62,94 +41,6 @@ tasks:
       labels:
         - database
         - tooling
-        - P1
-      assignee: null
-    - id: DB-FEAT-004
-      title: Docker Compose Environment
-      priority: high
-      estimated_hours: 24
-      description: Complete Docker Compose configuration for local development with all services
-      requirements:
-        - All services defined and networked
-        - Persistent data volumes
-        - Environment variable management
-        - Health checks for all containers
-        - Development vs production configurations
-      files:
-        - docker-compose.yml
-        - docker-compose.production.yml
-        - .env.example
-      dependencies:
-        - DB-FEAT-001
-      labels:
-        - infrastructure
-        - docker
-        - P0
-      assignee: null
-    - id: HONO-FEAT-001
-      title: Hono Project Setup & Core Framework
-      priority: high
-      estimated_hours: 20
-      description: Initialize Hono TypeScript project with development environment
-      requirements:
-        - Hono TypeScript project
-        - Development server with hot reload
-        - ESLint + Prettier configuration
-        - Testing framework (Vitest)
-        - Docker containerization
-      files:
-        - hono-service/
-        - package.json
-        - Dockerfile
-      dependencies:
-        - DB-FEAT-001
-      labels:
-        - hono
-        - setup
-        - P0
-      assignee: null
-    - id: HONO-FEAT-002
-      title: Database Integration with Drizzle
-      priority: high
-      estimated_hours: 24
-      description: Set up Drizzle ORM integration with PostgreSQL for CRUD operations
-      requirements:
-        - Drizzle schema definitions
-        - Connection pooling
-        - Basic CRUD operations
-        - Migration integration
-        - Type-safe query patterns
-      files:
-        - drizzle/
-        - src/db/
-        - src/types/
-      dependencies:
-        - HONO-FEAT-001
-        - DB-FEAT-002
-      labels:
-        - hono
-        - database
-        - P0
-      assignee: null
-    - id: HONO-FEAT-003
-      title: Web Scraping Engine
-      priority: high
-      estimated_hours: 40
-      description: Implement robust web scraping system for Lu.ma events using Playwright
-      requirements:
-        - Playwright browser automation
-        - Lu.ma event page parsing
-        - Retry logic for failed scrapes
-        - User agent rotation
-        - Rate limiting compliance
-      files:
-        - src/scraping/
-        - src/api/scrape/
-      dependencies:
-        - HONO-FEAT-002
-      labels:
-        - scraping
-        - playwright
         - P1
       assignee: null
     - id: HONO-FEAT-004
@@ -731,6 +622,37 @@ tasks:
         - hardening
         - P2
       assignee: null
+    - id: TASK-172856
+      title: Create 3 review tickets for ready-for-review items
+      priority: critical
+      estimated_hours: 4
+      description: Add task description here
+      requirements:
+        - Define specific requirements
+      files:
+        - Specify relevant files
+      dependencies: []
+      labels:
+        - auto-generated
+      assignee: null
+    - id: PLAN-001
+      title: Create 3 concurrent review tickets for ready-for-review items and plan merge strategy
+      priority: critical
+      estimated_hours: 6
+      description: Analyze the 9 items in ready-for-review section and create 3 balanced HIGH PRIORITY review tickets for concurrent execution by multiple agents, plus plan merge strategy for integrating all branches to main
+      requirements:
+        - Create 3 HIGH PRIORITY review tickets (REV-001, REV-002, REV-003)
+        - Balance workload across the 9 ready-for-review items
+        - Define merge strategy to avoid conflicts
+        - Specify review criteria and completion steps
+        - Ensure tickets can be worked concurrently
+      files:
+        - kanban.yaml
+        - ready-for-review items
+      dependencies: []
+      labels:
+        - auto-generated
+      assignee: null
   todo: []
   in_progress: []
   review:
@@ -847,6 +769,125 @@ tasks:
       assignee: agent-001
       started: '2025-08-13T01:26:28.374Z'
       completed: '2025-08-13T01:26:35.626Z'
+    - id: DB-FEAT-004
+      title: Docker Compose Environment
+      priority: high
+      estimated_hours: 24
+      description: Complete Docker Compose configuration for local development with all services
+      requirements:
+        - All services defined and networked
+        - Persistent data volumes
+        - Environment variable management
+        - Health checks for all containers
+        - Development vs production configurations
+      files:
+        - docker-compose.yml
+        - docker-compose.production.yml
+        - .env.example
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - infrastructure
+        - docker
+        - P0
+      assignee: agent-003
+      started: '2025-08-13T01:32:34.553Z'
+      completed: '2025-08-13T01:36:35.300Z'
+    - id: DB-FEAT-002
+      title: Core Schema Implementation
+      priority: high
+      estimated_hours: 40
+      description: Implement complete database schema for events, speakers, companies, topics and relationships
+      requirements:
+        - All tables with proper constraints
+        - Foreign key relationships
+        - Indexes for query patterns
+        - Vector column for embeddings
+        - Data validation rules
+      files:
+        - migrations/
+        - schema/
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - database
+        - schema
+        - P0
+      assignee: agent-001
+      started: '2025-08-13T01:32:13.125Z'
+      completed: '2025-08-13T01:37:00.389Z'
+    - id: HONO-FEAT-001
+      title: Hono Project Setup & Core Framework
+      priority: high
+      estimated_hours: 20
+      description: Initialize Hono TypeScript project with development environment
+      requirements:
+        - Hono TypeScript project
+        - Development server with hot reload
+        - ESLint + Prettier configuration
+        - Testing framework (Vitest)
+        - Docker containerization
+      files:
+        - hono-service/
+        - package.json
+        - Dockerfile
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - hono
+        - setup
+        - P0
+      assignee: agent-001
+      started: '2025-08-13T01:39:13.632Z'
+      completed: '2025-08-13T01:39:48.735Z'
+    - id: HONO-FEAT-003
+      title: Web Scraping Engine
+      priority: high
+      estimated_hours: 40
+      description: Implement robust web scraping system for Lu.ma events using Playwright
+      requirements:
+        - Playwright browser automation
+        - Lu.ma event page parsing
+        - Retry logic for failed scrapes
+        - User agent rotation
+        - Rate limiting compliance
+      files:
+        - src/scraping/
+        - src/api/scrape/
+      dependencies:
+        - HONO-FEAT-002
+      labels:
+        - scraping
+        - playwright
+        - P1
+      assignee: agent-001
+      started: '2025-08-13T01:40:41.669Z'
+      completed: '2025-08-13T01:42:00.294Z'
+    - id: HONO-FEAT-002
+      title: Database Integration with Drizzle
+      priority: high
+      estimated_hours: 24
+      description: Set up Drizzle ORM integration with PostgreSQL for CRUD operations
+      requirements:
+        - Drizzle schema definitions
+        - Connection pooling
+        - Basic CRUD operations
+        - Migration integration
+        - Type-safe query patterns
+      files:
+        - drizzle/
+        - src/db/
+        - src/types/
+      dependencies:
+        - HONO-FEAT-001
+        - DB-FEAT-002
+      labels:
+        - hono
+        - database
+        - P0
+      assignee: agent-002
+      started: '2025-08-13T01:40:22.347Z'
+      completed: '2025-08-13T01:49:03.927Z'
   done: []
 assignment_rules:
   priority_order:
