@@ -16,6 +16,7 @@
   "dependencies": {
     "@hono/node-server": "^1.8.0",
     "@hono/zod-validator": "^0.7.2",
+    "axios": "^1.11.0",
     "drizzle-orm": "^0.44.4",
     "hono": "^4.0.0",
     "pg": "^8.16.3",

@@ -4,6 +4,8 @@ import { logger } from 'hono/logger';
 import { serve } from '@hono/node-server';
 import { checkDatabaseConnection, closeDatabaseConnection } from './db/connection.ts';
 import eventsRoutes from './routes/events.ts';
+import internalRoutes from './api/internal/index.js';
+import { elixirClient } from './lib/elixir-client/client.js';
 
 // Create Hono app
 const app = new Hono();
@@ -32,6 +34,7 @@ app.get('/health', async (c) => {
 
 // API routes
 app.route('/api/events', eventsRoutes);
+app.route('/internal', internalRoutes);
 
 // 404 handler
 app.notFound((c) => {
@@ -58,6 +61,7 @@ app.onError((err, c) => {
 // Graceful shutdown
 const gracefulShutdown = async () => {
   console.log('Shutting down gracefully...');
+  elixirClient.destroy();
   await closeDatabaseConnection();
   process.exit(0);
 };
