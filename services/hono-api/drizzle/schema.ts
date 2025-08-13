@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, date, timestamp, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, date, timestamp, integer, jsonb, real } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const events = pgTable('events', {
@@ -21,9 +21,11 @@ export const events = pgTable('events', {
 export const speakers = pgTable('speakers', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  normalizedName: text('normalized_name'),
   title: text('title'),
   company: text('company'),
   bio: text('bio'),
+  confidenceScore: real('confidence_score').default(0),
   linkedinUrl: text('linkedin_url'),
   twitterUrl: text('twitter_url'),
   websiteUrl: text('website_url'),
@@ -35,7 +37,9 @@ export const speakers = pgTable('speakers', {
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull().unique(),
+  name: text('name').notNull(),
+  normalizedName: text('normalized_name').unique(),
+  domain: text('domain'),
   description: text('description'),
   industry: text('industry'),
   websiteUrl: text('website_url'),
@@ -61,6 +65,7 @@ export const eventSpeakers = pgTable('event_speakers', {
   eventId: uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
   speakerId: uuid('speaker_id').notNull().references(() => speakers.id, { onDelete: 'cascade' }),
   role: text('role').default('speaker'),
+  extractionConfidence: real('extraction_confidence').default(0),
   createdAt: timestamp('created_at').defaultNow()
 });
 
@@ -72,14 +77,26 @@ export const eventTopics = pgTable('event_topics', {
   createdAt: timestamp('created_at').defaultNow()
 });
 
+export const eventCompanies = pgTable('event_companies', {
+  eventId: uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  relationshipType: text('relationship_type'), // 'host', 'sponsor', 'venue', 'partner'
+  createdAt: timestamp('created_at').defaultNow()
+});
+
 // Relations
 export const eventsRelations = relations(events, ({ many }) => ({
   speakers: many(eventSpeakers),
-  topics: many(eventTopics)
+  topics: many(eventTopics),
+  companies: many(eventCompanies)
 }));
 
 export const speakersRelations = relations(speakers, ({ many }) => ({
   events: many(eventSpeakers)
+}));
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  events: many(eventCompanies)
 }));
 
 export const topicsRelations = relations(topics, ({ many }) => ({
@@ -105,5 +122,16 @@ export const eventTopicsRelations = relations(eventTopics, ({ one }) => ({
   topic: one(topics, {
     fields: [eventTopics.topicId],
     references: [topics.id]
+  })
+}));
+
+export const eventCompaniesRelations = relations(eventCompanies, ({ one }) => ({
+  event: one(events, {
+    fields: [eventCompanies.eventId],
+    references: [events.id]
+  }),
+  company: one(companies, {
+    fields: [eventCompanies.companyId],
+    references: [companies.id]
   })
 }));
