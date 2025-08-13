@@ -8,19 +8,104 @@ agents:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T01:55:42.517Z'
+    last_active: '2025-08-13T03:29:27.004Z'
   agent-002:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T02:58:37.660Z'
+    last_active: '2025-08-13T03:28:05.032Z'
   agent-003:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T02:58:38.038Z'
+    last_active: '2025-08-13T03:24:09.737Z'
 tasks:
   backlog:
+    - id: PLAN-002
+      title: Implementation Gap Analysis & Backfill Strategy
+      priority: critical
+      estimated_hours: 12
+      description: >-
+        Audit tasks marked as "done" to identify implementation gaps and create 3 workstreams 
+        to systematically verify completion status, then backfill missing work into kanban backlog 
+        with enhanced requirements and clearer implementation details. MUST complete before 
+        starting any rework tickets to ensure proper prioritization.
+      requirements:
+        - Create 3 parallel workstreams for comprehensive gap analysis
+        - Stream 1: Database & Infrastructure verification (DB-FEAT-*, RISK-*)
+        - Stream 2: Hono Service implementation validation (HONO-FEAT-*) - AMEND REWORK-001 with additional findings and refined goals
+        - Stream 3: Integration & tooling completeness check (remaining completed tasks)
+        - Compare task descriptions vs actual implementation in codebase
+        - Cross-reference with docs/ and spec.md as authoritative requirements
+        - Use tickets/ directory for detailed specifications and acceptance criteria
+        - Review existing REWORK-001 ticket and enhance with new gap analysis findings
+        - Identify missing features, incomplete implementations, or technical debt
+        - Generate backfill tasks with detailed requirements and file specifications
+        - Prioritize backfill tasks based on criticality and dependencies
+        - Update kanban.yaml with new tasks in backlog section
+        - ALL GENERATED BACKFILL TASKS MUST HAVE "HIGH" PRIORITY
+      files:
+        - kanban.yaml
+        - docs/
+        - spec.md
+        - tickets/
+        - REWORK-001 (existing ticket to amend)
+        - All completed task directories and files
+        - agents/*/
+        - Database migrations and schema
+        - Hono service implementation
+        - Infrastructure configurations
+      dependencies: []
+      labels:
+        - planning
+        - gap-analysis
+        - quality-assurance
+        - backward-looking
+        - P0
+      assignee: null
+    - id: REWORK-001
+      title: Complete Missing Hono Service Implementation
+      priority: high
+      estimated_hours: 40
+      description: >-
+        Implement critical missing functionality in Hono service based on REV-003 review findings. The service currently
+        lacks the core web scraping engine and security features required for production use.
+      requirements:
+        - Implement POST /api/scrape/luma endpoint with Playwright integration
+        - Add web scraping engine with retry logic and anti-detection measures
+        - Implement API key authentication system
+        - Add rate limiting middleware and security headers
+        - Fix TypeScript build configuration issues
+        - Create proper Dockerfile for containerization
+        - Expand test coverage for scraping and security features
+        - Add POST /api/events/batch/scrape for bulk operations
+        - Implement input validation and HTML sanitization
+        - Add comprehensive error handling for scraping operations
+      files:
+        - services/hono-api/src/scraping/
+        - services/hono-api/src/api/scrape/
+        - services/hono-api/src/middleware/
+        - services/hono-api/src/auth/
+        - services/hono-api/Dockerfile
+        - services/hono-api/tests/
+        - services/hono-api/tsconfig.json
+      dependencies:
+        - REV-003
+        - PLAN-002
+      labels:
+        - rework
+        - scraping
+        - security
+        - critical
+        - P0
+      assignee: null
+      review_findings: agents/agent-001/HONO_SERVICE_REVIEW_REPORT.md
+      blocking_issues:
+        - Missing web scraping engine (primary functionality)
+        - No security implementation (authentication/rate limiting)
+        - Build configuration errors
+        - Insufficient test coverage
+      estimated_completion: 8-12 days
     - id: DB-FEAT-003
       title: Migration Framework
       priority: high
@@ -622,37 +707,6 @@ tasks:
         - hardening
         - P2
       assignee: null
-    - id: TASK-172856
-      title: Create 3 review tickets for ready-for-review items
-      priority: critical
-      estimated_hours: 4
-      description: Add task description here
-      requirements:
-        - Define specific requirements
-      files:
-        - Specify relevant files
-      dependencies: []
-      labels:
-        - auto-generated
-      assignee: null
-    - id: PLAN-001
-      title: Create 3 concurrent review tickets for ready-for-review items and plan merge strategy
-      priority: critical
-      estimated_hours: 6
-      description: Analyze the 9 items in ready-for-review section and create 3 balanced HIGH PRIORITY review tickets for concurrent execution by multiple agents, plus plan merge strategy for integrating all branches to main
-      requirements:
-        - Create 3 HIGH PRIORITY review tickets (REV-001, REV-002, REV-003)
-        - Balance workload across the 9 ready-for-review items
-        - Define merge strategy to avoid conflicts
-        - Specify review criteria and completion steps
-        - Ensure tickets can be worked concurrently
-      files:
-        - kanban.yaml
-        - ready-for-review items
-      dependencies: []
-      labels:
-        - auto-generated
-      assignee: null
   todo: []
   in_progress: []
   review:
@@ -888,6 +942,141 @@ tasks:
       assignee: agent-002
       started: '2025-08-13T01:40:22.347Z'
       completed: '2025-08-13T01:49:03.927Z'
+    - id: TASK-172856
+      title: Create 3 review tickets for ready-for-review items
+      priority: critical
+      estimated_hours: 4
+      description: Add task description here
+      requirements:
+        - Define specific requirements
+      files:
+        - Specify relevant files
+      dependencies: []
+      labels:
+        - auto-generated
+      assignee: agent-001
+      started: '2025-08-13T03:13:47.955Z'
+      completed: '2025-08-13T03:18:37.180Z'
+    - id: PLAN-001
+      title: Create 3 concurrent review tickets for ready-for-review items and plan merge strategy
+      priority: critical
+      estimated_hours: 6
+      description: >-
+        Analyze the 9 items in ready-for-review section and create 3 balanced HIGH PRIORITY review tickets for
+        concurrent execution by multiple agents, plus plan merge strategy for integrating all branches to main
+      requirements:
+        - Create 3 HIGH PRIORITY review tickets (REV-001, REV-002, REV-003)
+        - Balance workload across the 9 ready-for-review items
+        - Define merge strategy to avoid conflicts
+        - Specify review criteria and completion steps
+        - Ensure tickets can be worked concurrently
+      files:
+        - kanban.yaml
+        - ready-for-review items
+      dependencies: []
+      labels:
+        - auto-generated
+      assignee: agent-001
+      started: '2025-08-13T03:19:34.595Z'
+      completed: '2025-08-13T03:20:31.687Z'
+    - id: REV-002
+      title: Review Risk Mitigation & Project Health
+      priority: high
+      estimated_hours: 6
+      description: >-
+        Review completed risk mitigation tasks to ensure project health and proper cleanup before proceeding with
+        feature development. Validates cleanup and project organization.
+      requirements:
+        - Verify redundant bash scripts are properly removed (RISK-001)
+        - Validate kanban accuracy and task completeness (RISK-002)
+        - Review CI/CD readiness and deployment preparations (RISK-003)
+        - Ensure no deprecated scripts or configurations remain
+        - Validate project documentation is current
+        - Confirm proper task tracking and workflow
+        - Test agent management system functionality
+        - Create merge plan for risk mitigation changes
+      files:
+        - scripts/
+        - kanban.yaml
+        - justfile
+        - docker-compose.yml
+        - docs/
+        - .github/
+      dependencies: []
+      labels:
+        - review
+        - risk-mitigation
+        - cleanup
+        - P0
+      assignee: agent-003
+      started: '2025-08-13T03:19:40.079Z'
+      completed: '2025-08-13T03:23:39.271Z'
+    - id: REV-001
+      title: Review Infrastructure & Database Foundation
+      priority: high
+      estimated_hours: 8
+      description: >-
+        Comprehensive review of completed database and infrastructure components to ensure production readiness before
+        integration with main branch. Covers PostgreSQL setup, Docker environment, and core schema.
+      requirements:
+        - Review PostgreSQL setup with pgvector and AGE extensions (DB-FEAT-001)
+        - Validate Docker Compose environment configuration (DB-FEAT-004)
+        - Audit core database schema implementation (DB-FEAT-002)
+        - Test all database connections and health checks
+        - Verify migrations work correctly
+        - Ensure proper indexing and performance considerations
+        - Validate security configurations
+        - Create merge plan for infrastructure components
+      files:
+        - docker-compose.yml
+        - docker-compose.production.yml
+        - migrations/
+        - schema/
+        - postgres/
+      dependencies: []
+      labels:
+        - review
+        - infrastructure
+        - database
+        - P0
+      assignee: agent-002
+      started: '2025-08-13T03:19:39.050Z'
+      completed: '2025-08-13T03:26:19.154Z'
+    - id: REV-003
+      title: Review Hono Service Implementation
+      priority: high
+      estimated_hours: 10
+      description: >-
+        Comprehensive review of Hono TypeScript service implementation including framework setup, database integration,
+        and web scraping functionality before main branch integration.
+      requirements:
+        - Review Hono project setup and development environment (HONO-FEAT-001)
+        - Validate Drizzle ORM integration and database operations (HONO-FEAT-002)
+        - Test web scraping engine with Lu.ma integration (HONO-FEAT-003)
+        - Verify TypeScript configurations and code quality
+        - Test API endpoints and error handling
+        - Validate Docker containerization
+        - Ensure proper test coverage
+        - Review security considerations for scraping
+        - Create merge plan for Hono service
+      files:
+        - services/hono-api/
+        - drizzle/
+        - src/scraping/
+        - src/api/
+        - package.json
+        - Dockerfile
+        - tests/
+      dependencies: []
+      labels:
+        - review
+        - hono
+        - api
+        - scraping
+        - P0
+      assignee: agent-001
+      started: '2025-08-13T03:20:52.885Z'
+      completed: '2025-08-13T03:29:18.547Z'
   done: []
 assignment_rules:
   priority_order:
