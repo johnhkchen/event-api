@@ -8,148 +8,46 @@ agents:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T03:29:27.004Z'
+    last_active: '2025-08-13T04:50:42.418Z'
   agent-002:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T03:28:05.032Z'
+    last_active: '2025-08-13T04:46:13.998Z'
   agent-003:
     status: available
     current_task: null
     worktree: null
-    last_active: '2025-08-13T03:24:09.737Z'
+    last_active: '2025-08-13T04:50:00.473Z'
 tasks:
   backlog:
-    - id: PLAN-002
-      title: Implementation Gap Analysis & Backfill Strategy
-      priority: critical
-      estimated_hours: 12
-      description: >-
-        Audit tasks marked as "done" to identify implementation gaps and create 3 workstreams 
-        to systematically verify completion status, then backfill missing work into kanban backlog 
-        with enhanced requirements and clearer implementation details. MUST complete before 
-        starting any rework tickets to ensure proper prioritization.
-      requirements:
-        - Create 3 parallel workstreams for comprehensive gap analysis
-        - Stream 1: Database & Infrastructure verification (DB-FEAT-*, RISK-*)
-        - Stream 2: Hono Service implementation validation (HONO-FEAT-*) - AMEND REWORK-001 with additional findings and refined goals
-        - Stream 3: Integration & tooling completeness check (remaining completed tasks)
-        - Compare task descriptions vs actual implementation in codebase
-        - Cross-reference with docs/ and spec.md as authoritative requirements
-        - Use tickets/ directory for detailed specifications and acceptance criteria
-        - Review existing REWORK-001 ticket and enhance with new gap analysis findings
-        - Identify missing features, incomplete implementations, or technical debt
-        - Generate backfill tasks with detailed requirements and file specifications
-        - Prioritize backfill tasks based on criticality and dependencies
-        - Update kanban.yaml with new tasks in backlog section
-        - ALL GENERATED BACKFILL TASKS MUST HAVE "HIGH" PRIORITY
-      files:
-        - kanban.yaml
-        - docs/
-        - spec.md
-        - tickets/
-        - REWORK-001 (existing ticket to amend)
-        - All completed task directories and files
-        - agents/*/
-        - Database migrations and schema
-        - Hono service implementation
-        - Infrastructure configurations
-      dependencies: []
-      labels:
-        - planning
-        - gap-analysis
-        - quality-assurance
-        - backward-looking
-        - P0
-      assignee: null
-    - id: REWORK-001
-      title: Complete Missing Hono Service Implementation
+    - id: BACKFILL-007
+      title: Complete AGE Graph Extension Implementation
       priority: high
-      estimated_hours: 40
-      description: >-
-        Implement critical missing functionality in Hono service based on REV-003 review findings. The service currently
-        lacks the core web scraping engine and security features required for production use.
+      estimated_hours: 16
+      description: Properly configure AGE extension for graph operations that was marked completed but not implemented
       requirements:
-        - Implement POST /api/scrape/luma endpoint with Playwright integration
-        - Add web scraping engine with retry logic and anti-detection measures
-        - Implement API key authentication system
-        - Add rate limiting middleware and security headers
-        - Fix TypeScript build configuration issues
-        - Create proper Dockerfile for containerization
-        - Expand test coverage for scraping and security features
-        - Add POST /api/events/batch/scrape for bulk operations
-        - Implement input validation and HTML sanitization
-        - Add comprehensive error handling for scraping operations
+        - Graph schema initialization scripts in SQL
+        - Graph node creation functions for events, speakers, companies
+        - Graph edge creation with relationship weights
+        - Graph traversal query implementations
+        - Integration with existing relationship tables
+        - Graph-based recommendation algorithms
+        - Performance optimization for graph queries
+        - Graph visualization data endpoints
       files:
-        - services/hono-api/src/scraping/
-        - services/hono-api/src/api/scrape/
-        - services/hono-api/src/middleware/
-        - services/hono-api/src/auth/
-        - services/hono-api/Dockerfile
-        - services/hono-api/tests/
-        - services/hono-api/tsconfig.json
+        - migrations/003_age_graph_setup.sql
+        - services/elixir-service/lib/event_api/graph/
+        - services/hono-api/src/api/graph/
       dependencies:
-        - REV-003
-        - PLAN-002
+        - BACKFILL-002
       labels:
-        - rework
-        - scraping
-        - security
         - critical
+        - graph
+        - database
         - P0
       assignee: null
-      review_findings: agents/agent-001/HONO_SERVICE_REVIEW_REPORT.md
-      blocking_issues:
-        - Missing web scraping engine (primary functionality)
-        - No security implementation (authentication/rate limiting)
-        - Build configuration errors
-        - Insufficient test coverage
-      estimated_completion: 8-12 days
-    - id: DB-FEAT-003
-      title: Migration Framework
-      priority: high
-      estimated_hours: 18
-      description: Establish database migration framework supporting both Hono and Elixir migration patterns
-      requirements:
-        - Migration numbering scheme
-        - Rollback capabilities
-        - Cross-service migration coordination
-        - Development seed data migrations
-        - Production migration strategy
-      files:
-        - migrations/
-        - drizzle/
-        - priv/repo/migrations/
-      dependencies:
-        - DB-FEAT-002
-      labels:
-        - database
-        - tooling
-        - P1
-      assignee: null
-    - id: HONO-FEAT-004
-      title: Event CRUD API Endpoints
-      priority: high
-      estimated_hours: 32
-      description: Implement core CRUD operations and event discovery endpoints
-      requirements:
-        - GET /api/events with filtering and pagination
-        - GET /api/events/:id with related data
-        - POST /api/events for manual creation
-        - PUT /api/events/:id for updates
-        - DELETE /api/events/:id with cascading
-        - Query parameter validation
-      files:
-        - src/routes/events/
-        - src/api/
-      dependencies:
-        - HONO-FEAT-002
-      labels:
-        - api
-        - crud
-        - P1
-      assignee: null
+      blocking_rationale: Graph relationship features claimed but not implemented - core differentiator missing
     - id: HONO-FEAT-005
       title: Search & Discovery API
       priority: high
@@ -708,7 +606,37 @@ tasks:
         - P2
       assignee: null
   todo: []
-  in_progress: []
+  in_progress:
+    - id: BACKFILL-006
+      title: Create Missing Service Dockerfiles
+      priority: high
+      estimated_hours: 12
+      description: Create proper Dockerfiles that are referenced in docker-compose.yml but completely missing
+      requirements:
+        - services/hono-api/Dockerfile for TypeScript service
+        - services/elixir-service/Dockerfile for Phoenix application
+        - services/baml-service/Dockerfile for Python service
+        - Multi-stage production Dockerfiles for optimization
+        - Development Dockerfiles with hot reload
+        - Health check integration in all containers
+        - Proper environment variable handling
+        - Security scanning and optimization
+      files:
+        - services/hono-api/Dockerfile
+        - services/hono-api/Dockerfile.dev
+        - services/elixir-service/Dockerfile
+        - services/elixir-service/Dockerfile.dev
+        - services/baml-service/Dockerfile
+        - services/baml-service/Dockerfile.dev
+      dependencies: []
+      labels:
+        - critical
+        - docker
+        - infrastructure
+        - P0
+      assignee: agent-001
+      blocking_rationale: Docker Compose cannot build containers - development environment non-functional
+      started: '2025-08-13T04:42:16.979Z'
   review:
     - id: RISK-002
       title: Review Specs and Upgrade Kanban Accuracy
@@ -1077,6 +1005,357 @@ tasks:
       assignee: agent-001
       started: '2025-08-13T03:20:52.885Z'
       completed: '2025-08-13T03:29:18.547Z'
+    - id: PLAN-002
+      title: Implementation Gap Analysis & Backfill Strategy
+      priority: critical
+      estimated_hours: 12
+      description: >-
+        Audit tasks marked as "done" to identify implementation gaps and create 3 workstreams  to systematically verify
+        completion status, then backfill missing work into kanban backlog  with enhanced requirements and clearer
+        implementation details. MUST complete before  starting any rework tickets to ensure proper prioritization.
+      requirements:
+        - Create 3 parallel workstreams for comprehensive gap analysis
+        - Stream 1: Database & Infrastructure verification (DB-FEAT-*, RISK-*)
+        - Stream 2: >-
+            Hono Service implementation validation (HONO-FEAT-*) - AMEND REWORK-001 with additional findings and refined
+            goals
+        - Stream 3: Integration & tooling completeness check (remaining completed tasks)
+        - Compare task descriptions vs actual implementation in codebase
+        - Cross-reference with docs/ and spec.md as authoritative requirements
+        - Use tickets/ directory for detailed specifications and acceptance criteria
+        - Review existing REWORK-001 ticket and enhance with new gap analysis findings
+        - Identify missing features, incomplete implementations, or technical debt
+        - Generate backfill tasks with detailed requirements and file specifications
+        - Prioritize backfill tasks based on criticality and dependencies
+        - Update kanban.yaml with new tasks in backlog section
+        - ALL GENERATED BACKFILL TASKS MUST HAVE "HIGH" PRIORITY
+      files:
+        - kanban.yaml
+        - docs/
+        - spec.md
+        - tickets/
+        - REWORK-001 (existing ticket to amend)
+        - All completed task directories and files
+        - agents/*/
+        - Database migrations and schema
+        - Hono service implementation
+        - Infrastructure configurations
+      dependencies: []
+      labels:
+        - planning
+        - gap-analysis
+        - quality-assurance
+        - backward-looking
+        - P0
+      assignee: agent-001
+      started: '2025-08-13T03:31:57.750Z'
+      completed: '2025-08-13T03:39:35.617Z'
+    - id: BACKFILL-001
+      title: Implement Missing Web Scraping Engine
+      priority: high
+      estimated_hours: 40
+      description: >-
+        Implement complete web scraping functionality that was marked as completed but is entirely missing from the
+        codebase
+      requirements:
+        - Create POST /api/scrape/luma endpoint with full Playwright integration
+        - Implement retry logic with exponential backoff and anti-detection measures
+        - Add user agent rotation and residential IP proxy support
+        - HTML sanitization and secure storage mechanisms
+        - Queue integration with Elixir processing service (when implemented)
+        - Rate limiting compliance and ethical scraping practices
+        - Error handling for various Lu.ma page formats
+        - Batch scraping endpoint for multiple URLs
+      files:
+        - services/hono-api/src/api/scrape/
+        - services/hono-api/src/lib/scraping/
+        - services/hono-api/src/middleware/scraping.ts
+        - services/hono-api/package.json (add playwright dependencies)
+      dependencies:
+        - BACKFILL-002
+      labels:
+        - critical
+        - scraping
+        - missing-implementation
+        - P0
+      assignee: agent-001
+      blocking_rationale: Primary value proposition of API is non-functional - marked completed but 0% implemented
+      started: '2025-08-13T04:00:30.266Z'
+      completed: '2025-08-13T04:10:40.088Z'
+    - id: DB-FEAT-003
+      title: Migration Framework
+      priority: high
+      estimated_hours: 18
+      description: Establish database migration framework supporting both Hono and Elixir migration patterns
+      requirements:
+        - Migration numbering scheme
+        - Rollback capabilities
+        - Cross-service migration coordination
+        - Development seed data migrations
+        - Production migration strategy
+      files:
+        - migrations/
+        - drizzle/
+        - priv/repo/migrations/
+      dependencies:
+        - DB-FEAT-002
+      labels:
+        - database
+        - tooling
+        - P1
+      assignee: agent-003
+      started: '2025-08-13T03:32:26.391Z'
+      completed: '2025-08-13T04:12:50.225Z'
+    - id: REWORK-001
+      title: Complete Missing Hono Service Implementation
+      priority: high
+      estimated_hours: 40
+      description: >-
+        Implement critical missing functionality in Hono service based on REV-003 review findings. The service currently
+        lacks the core web scraping engine and security features required for production use.
+      requirements:
+        - Implement POST /api/scrape/luma endpoint with Playwright integration
+        - Add web scraping engine with retry logic and anti-detection measures
+        - Implement API key authentication system
+        - Add rate limiting middleware and security headers
+        - Fix TypeScript build configuration issues
+        - Create proper Dockerfile for containerization
+        - Expand test coverage for scraping and security features
+        - Add POST /api/events/batch/scrape for bulk operations
+        - Implement input validation and HTML sanitization
+        - Add comprehensive error handling for scraping operations
+      files:
+        - services/hono-api/src/scraping/
+        - services/hono-api/src/api/scrape/
+        - services/hono-api/src/middleware/
+        - services/hono-api/src/auth/
+        - services/hono-api/Dockerfile
+        - services/hono-api/tests/
+        - services/hono-api/tsconfig.json
+      dependencies:
+        - REV-003
+        - PLAN-002
+      labels:
+        - rework
+        - scraping
+        - security
+        - critical
+        - P0
+      assignee: agent-002
+      review_findings: agents/agent-001/HONO_SERVICE_REVIEW_REPORT.md
+      blocking_issues:
+        - Missing web scraping engine (primary functionality)
+        - No security implementation (authentication/rate limiting)
+        - Build configuration errors
+        - Insufficient test coverage
+        - Complete Elixir service missing (entire backend processing)
+        - BAML service completely absent (data extraction)
+        - Schema synchronization critical mismatch
+        - Missing Docker configurations for services
+        - AGE graph extension not implemented
+      estimated_completion: 15-20 days
+      gap_analysis_findings: |
+        CRITICAL GAPS IDENTIFIED BY PLAN-002:
+        - Web scraping engine marked "completed" but entirely missing (0% implementation)
+        - Elixir processing service marked "completed" but completely empty directories
+        - BAML service marked as dependency but doesn't exist
+        - Schema synchronization failure between SQL and Drizzle ORM
+        - No authentication/security middleware despite being marked complete
+        - Docker configurations reference non-existent Dockerfiles
+        - AGE graph extension setup incomplete despite being marked done
+
+        Total missing functionality: ~260 hours of critical work marked as "completed"
+      started: '2025-08-13T03:32:10.407Z'
+      completed: '2025-08-13T04:16:40.820Z'
+    - id: BACKFILL-002
+      title: Fix Critical Schema Synchronization
+      priority: high
+      estimated_hours: 16
+      description: >-
+        Align Drizzle ORM schema with SQL migration to fix critical data model inconsistencies preventing any database
+        operations
+      requirements:
+        - Add missing columns to Drizzle schema (normalized_name, confidence_score for speakers)
+        - Create event_companies table in Drizzle schema (completely missing)
+        - Add extraction_confidence field to event_speakers table
+        - Update TypeScript types for all schema changes
+        - Test schema compatibility between SQL and Drizzle
+        - Generate new Drizzle migration to sync with existing SQL
+        - Verify all relationship mappings work correctly
+      files:
+        - services/hono-api/drizzle/schema.ts
+        - services/hono-api/src/types/events.ts
+        - services/hono-api/src/types/speakers.ts
+        - services/hono-api/src/types/companies.ts
+        - services/hono-api/drizzle/migrations/
+      dependencies: []
+      labels:
+        - critical
+        - database
+        - schema-mismatch
+        - P0
+      assignee: agent-001
+      blocking_rationale: Database operations will fail due to schema mismatches - immediate blocker
+      started: '2025-08-13T04:13:26.495Z'
+      completed: '2025-08-13T04:18:37.936Z'
+    - id: BACKFILL-003
+      title: Implement Complete Elixir Processing Service
+      priority: high
+      estimated_hours: 120
+      description: Create the entire Elixir/Phoenix service that was marked completed but exists only as empty directories
+      requirements:
+        - Phoenix 1.7+ project setup with OTP supervision tree
+        - Ecto database integration with schema definitions
+        - Event processing pipeline with GenServer workers
+        - BAML integration HTTP client for data extraction
+        - Deduplication engine for speakers and companies
+        - Internal API endpoints (/internal/process, /internal/graph, /internal/deduplicate, /internal/recommend)
+        - Graph relationship builder using AGE extension
+        - Processing status tracking and error handling
+        - Phoenix PubSub for real-time updates
+        - Comprehensive test suite
+      files:
+        - services/elixir-service/mix.exs
+        - services/elixir-service/lib/event_api/
+        - services/elixir-service/lib/event_api_web/
+        - services/elixir-service/config/
+        - services/elixir-service/test/
+        - services/elixir-service/priv/repo/migrations/
+      dependencies:
+        - BACKFILL-004
+        - BACKFILL-007
+      labels:
+        - critical
+        - elixir
+        - processing
+        - missing-service
+        - P0
+      assignee: agent-002
+      blocking_rationale: Backend processing entirely missing - core architecture component absent
+      started: '2025-08-13T04:18:38.093Z'
+      completed: '2025-08-13T04:25:11.374Z'
+    - id: BACKFILL-004
+      title: Implement Missing BAML Service
+      priority: high
+      estimated_hours: 32
+      description: Create BAML service for intelligent HTML data extraction that is referenced but completely absent
+      requirements:
+        - BAML service HTTP API with /extract endpoint
+        - HTML parsing and structured data extraction
+        - Integration with OpenAI API for content analysis
+        - Response caching for identical HTML content
+        - Error handling and validation
+        - Rate limiting for OpenAI API calls
+        - Structured output schemas for events, speakers, companies
+        - Performance monitoring and logging
+        - Docker containerization
+      files:
+        - services/baml-service/main.py
+        - services/baml-service/schemas/
+        - services/baml-service/requirements.txt
+        - services/baml-service/Dockerfile
+        - services/baml-service/config/
+      dependencies: []
+      labels:
+        - critical
+        - ai
+        - extraction
+        - missing-service
+        - P0
+      assignee: agent-001
+      blocking_rationale: Data extraction pipeline cannot function - Elixir service depends on this
+      started: '2025-08-13T04:19:23.890Z'
+      completed: '2025-08-13T04:35:31.635Z'
+    - id: BACKFILL-005
+      title: Implement Missing Authentication & Security
+      priority: high
+      estimated_hours: 24
+      description: Add security features that are completely missing despite being marked as implemented
+      requirements:
+        - API key authentication system with database storage
+        - Rate limiting middleware by IP and API key
+        - CORS configuration for production
+        - Input validation and sanitization middleware
+        - Security headers (HSTS, CSP, etc.)
+        - Request logging and audit trail
+        - Authentication middleware for protected endpoints
+        - API key management endpoints
+        - Role-based access control foundation
+      files:
+        - services/hono-api/src/middleware/auth.ts
+        - services/hono-api/src/middleware/rate-limit.ts
+        - services/hono-api/src/middleware/security.ts
+        - services/hono-api/src/lib/auth/
+        - services/hono-api/src/api/auth/
+      dependencies:
+        - BACKFILL-002
+      labels:
+        - critical
+        - security
+        - authentication
+        - P0
+      assignee: agent-002
+      blocking_rationale: API completely unprotected - unsuitable for production deployment
+      started: '2025-08-13T04:28:29.696Z'
+      completed: '2025-08-13T04:46:13.997Z'
+    - id: HONO-FEAT-004
+      title: Event CRUD API Endpoints
+      priority: high
+      estimated_hours: 32
+      description: Implement core CRUD operations and event discovery endpoints
+      requirements:
+        - GET /api/events with filtering and pagination
+        - GET /api/events/:id with related data
+        - POST /api/events for manual creation
+        - PUT /api/events/:id for updates
+        - DELETE /api/events/:id with cascading
+        - Query parameter validation
+      files:
+        - src/routes/events/
+        - src/api/
+      dependencies:
+        - HONO-FEAT-002
+      labels:
+        - api
+        - crud
+        - P1
+      assignee: agent-003
+      started: '2025-08-13T04:45:47.007Z'
+      completed: '2025-08-13T04:49:14.046Z'
+    - id: ADMIN-001
+      title: Review Task Validation & Completion
+      priority: critical
+      estimated_hours: 10
+      description: >-
+        Systematically validate the 20 review tasks to determine which are genuinely complete versus need rework,
+        avoiding duplicate backfill tasks
+      requirements:
+        - Audit each review task's implementation against stated requirements
+        - Verify file existence and actual functionality for each completed task
+        - Cross-reference with existing backfill tasks to avoid duplication
+        - Move truly completed tasks to done section with verification notes
+        - Move incomplete tasks back to appropriate sections (backlog/in_progress/todo)
+        - Update existing backfill tasks if review reveals additional requirements
+        - Document findings and rationale for each completion decision
+        - Ensure no duplicate work between review tasks and backfill tasks
+      files:
+        - kanban.yaml
+        - All files referenced in review section tasks
+        - agents/*/
+        - services/
+        - migrations/
+        - docker-compose.yml
+      dependencies: []
+      labels:
+        - administration
+        - quality-control
+        - review-management
+        - critical
+      assignee: agent-001
+      completion_status: 90% complete - validation done, kanban updates pending
+      pending_work: Move validated tasks to proper sections in kanban.yaml based on findings
+      started: '2025-08-13T04:49:20.533Z'
+      completed: '2025-08-13T04:50:33.797Z'
   done: []
 assignment_rules:
   priority_order:
