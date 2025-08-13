@@ -43,6 +43,83 @@ services:
       - event-api-network
     profiles:
       - dev-proxy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional containerized services for development
+  # Use profile 'dev-containers' to run services in containers instead of host
+  hono-dev:
+    build:
+      context: .
+      dockerfile: services/hono/Dockerfile.dev
+    container_name: event-api-hono-dev
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-event_api}:${POSTGRES_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-event_api_dev}
+      - ELIXIR_SERVICE_URL=http://elixir-dev:4000
+      - BAML_SERVICE_URL=http://baml-dev:8080
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - event-api-network
+    profiles:
+      - dev-containers
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  elixir-dev:
+    build:
+      context: .
+      dockerfile: services/elixir/Dockerfile.dev
+    container_name: event-api-elixir-dev
+    ports:
+      - "4001:4000"
+    environment:
+      - MIX_ENV=dev
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-event_api}:${POSTGRES_PASSWORD:-development_password}@database:5432/${POSTGRES_DB:-event_api_dev}
+      - HONO_API_URL=http://hono-dev:3000
+      - BAML_SERVICE_URL=http://baml-dev:8080
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - event-api-network
+    profiles:
+      - dev-containers
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  baml-dev:
+    build:
+      context: .
+      dockerfile: services/baml/Dockerfile.dev
+    container_name: event-api-baml-dev
+    ports:
+      - "8081:8080"
+    environment:
+      - NODE_ENV=development
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - event-api-network
+    profiles:
+      - dev-containers
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
