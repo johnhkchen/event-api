@@ -29,6 +29,8 @@ docker.pkg-path = "docker"
 # Additional tools that services might need
 curl.pkg-path = "curl"
 git.pkg-path = "git"
+fastfetch.pkg-path = "fastfetch"
+elixir.pkg-path = "elixir"
 
 
 ## Environment Variables ---------------------------------------------

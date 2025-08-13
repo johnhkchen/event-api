@@ -9,6 +9,12 @@
       "docker": {
         "pkg-path": "docker"
       },
+      "elixir": {
+        "pkg-path": "elixir"
+      },
+      "fastfetch": {
+        "pkg-path": "fastfetch"
+      },
       "git": {
         "pkg-path": "git"
       },
@@ -290,6 +296,246 @@
       ],
       "outputs": {
         "out": "/nix/store/r0vqz3dsdhw31gyk098qgrw61vwmc7a1-docker-28.3.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "elixir",
+      "broken": false,
+      "derivation": "/nix/store/0h8iarlm94ggvhnxixjz1rh6sfgssa0g-elixir-1.18.4.drv",
+      "description": "Functional, meta-programming aware language built on top of the Erlang VM",
+      "install_id": "elixir",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "elixir-1.18.4",
+      "pname": "elixir",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:42.735698Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.18.4",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/kscrp90az9ydblw3scq48aca1ggiqzz1-elixir-1.18.4"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "elixir",
+      "broken": false,
+      "derivation": "/nix/store/fvm1m70hhxjxkb9nb51p9k55si3rzlns-elixir-1.18.4.drv",
+      "description": "Functional, meta-programming aware language built on top of the Erlang VM",
+      "install_id": "elixir",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "elixir-1.18.4",
+      "pname": "elixir",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:28.225818Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.18.4",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/y659sqd4p5b3j0afn9140lwis6mq3vsy-elixir-1.18.4"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "elixir",
+      "broken": false,
+      "derivation": "/nix/store/qnyqsa3sh8jfkq9z1pafy18kn2vsgk9l-elixir-1.18.4.drv",
+      "description": "Functional, meta-programming aware language built on top of the Erlang VM",
+      "install_id": "elixir",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "elixir-1.18.4",
+      "pname": "elixir",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:45.562Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.18.4",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/5bwxdhjb0rzlfs760l1k5dxrw26wj87h-elixir-1.18.4"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "elixir",
+      "broken": false,
+      "derivation": "/nix/store/5hl8bb0nwknbg42vmiy455h75wlr0j33-elixir-1.18.4.drv",
+      "description": "Functional, meta-programming aware language built on top of the Erlang VM",
+      "install_id": "elixir",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "elixir-1.18.4",
+      "pname": "elixir",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:44:34.174297Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.18.4",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/nkmxx7q1kk2ilbmrxwndrxy2kwcwhmjl-elixir-1.18.4"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fastfetch",
+      "broken": false,
+      "derivation": "/nix/store/c9mjf3agv0iswgxbj51hq6hlk733j4y1-fastfetch-2.49.0.drv",
+      "description": "Actively maintained, feature-rich and performance oriented, neofetch like system information tool",
+      "install_id": "fastfetch",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "fastfetch-2.49.0",
+      "pname": "fastfetch",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T00:19:42.804983Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.49.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "man": "/nix/store/7vhl70wc2q6vd827bnh6qni82qj76bfh-fastfetch-2.49.0-man",
+        "out": "/nix/store/7a6wfis453i4sdlz39iqgymsdbj70qwp-fastfetch-2.49.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fastfetch",
+      "broken": false,
+      "derivation": "/nix/store/40h52ynmmr62k6qhsii30r3m481imydq-fastfetch-2.49.0.drv",
+      "description": "Actively maintained, feature-rich and performance oriented, neofetch like system information tool",
+      "install_id": "fastfetch",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "fastfetch-2.49.0",
+      "pname": "fastfetch",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T19:29:28.370126Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.49.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "man": "/nix/store/v7d0m08qb9n4nsiz7cdbcihq1mfwq4pr-fastfetch-2.49.0-man",
+        "out": "/nix/store/c6p4mipbdjxpm72rqz1mf2a1k9vm9qm9-fastfetch-2.49.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fastfetch",
+      "broken": false,
+      "derivation": "/nix/store/2fi1v9dc2f1d2shjqighz6i9m4mp25qa-fastfetch-2.49.0.drv",
+      "description": "Actively maintained, feature-rich and performance oriented, neofetch like system information tool",
+      "install_id": "fastfetch",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "fastfetch-2.49.0",
+      "pname": "fastfetch",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T20:31:45.647312Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.49.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "man": "/nix/store/56dy9d5s5152vbb30jlslxvv8d4y6wrq-fastfetch-2.49.0-man",
+        "out": "/nix/store/340wqnsb904cxxlah1qphcbllgb39fvs-fastfetch-2.49.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fastfetch",
+      "broken": false,
+      "derivation": "/nix/store/g2gnq8008qs81r94dqhxnl6h6yk9h8lq-fastfetch-2.49.0.drv",
+      "description": "Actively maintained, feature-rich and performance oriented, neofetch like system information tool",
+      "install_id": "fastfetch",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "name": "fastfetch-2.49.0",
+      "pname": "fastfetch",
+      "rev": "85dbfc7aaf52ecb755f87e577ddbe6dbbdbc1054",
+      "rev_count": 841808,
+      "rev_date": "2025-08-09T07:48:19Z",
+      "scrape_date": "2025-08-11T21:44:34.342567Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.49.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "man": "/nix/store/7a5xk0krwnlfhfwgvqa2yym4a8fnd2ks-fastfetch-2.49.0-man",
+        "out": "/nix/store/baklmz9hz4pb68idgr507wpvly4qmcmy-fastfetch-2.49.0"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
