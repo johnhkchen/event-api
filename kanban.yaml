@@ -5,10 +5,10 @@ metadata:
   last_updated: '2025-08-13'
 agents:
   agent-001:
-    status: available
-    current_task: null
-    worktree: null
-    last_active: '2025-08-13T01:27:11.849Z'
+    status: working
+    current_task: DB-FEAT-002
+    worktree: ./agents/agent-001
+    last_active: '2025-08-13T01:44:29.488Z'
   agent-002:
     status: available
     current_task: null
@@ -21,27 +21,6 @@ agents:
     last_active: '2025-08-13T01:26:13.595Z'
 tasks:
   backlog:
-    - id: DB-FEAT-002
-      title: Core Schema Implementation
-      priority: high
-      estimated_hours: 40
-      description: Implement complete database schema for events, speakers, companies, topics and relationships
-      requirements:
-        - All tables with proper constraints
-        - Foreign key relationships
-        - Indexes for query patterns
-        - Vector column for embeddings
-        - Data validation rules
-      files:
-        - migrations/
-        - schema/
-      dependencies:
-        - DB-FEAT-001
-      labels:
-        - database
-        - schema
-        - P0
-      assignee: null
     - id: DB-FEAT-003
       title: Migration Framework
       priority: high
@@ -732,7 +711,29 @@ tasks:
         - P2
       assignee: null
   todo: []
-  in_progress: []
+  in_progress:
+    - id: DB-FEAT-002
+      title: Core Schema Implementation
+      priority: high
+      estimated_hours: 40
+      description: Implement complete database schema for events, speakers, companies, topics and relationships
+      requirements:
+        - All tables with proper constraints
+        - Foreign key relationships
+        - Indexes for query patterns
+        - Vector column for embeddings
+        - Data validation rules
+      files:
+        - migrations/
+        - schema/
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - database
+        - schema
+        - P0
+      assignee: agent-001
+      started: '2025-08-13T01:44:29.494Z'
   review:
     - id: RISK-002
       title: Review Specs and Upgrade Kanban Accuracy
