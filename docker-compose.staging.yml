@@ -1,0 +1,129 @@
+# Event API - Staging Environment
+# This compose file is for staging deployment and testing
+
+services:
+  # Main application container for staging
+  event-api-staging:
+    image: event-api:${IMAGE_TAG:-staging}
+    container_name: event-api-staging
+    ports:
+      - "3001:3000"  # Hono API on different port to avoid conflicts
+      - "4001:4000"  # Elixir Service
+      - "8081:8080"  # BAML Service
+    environment:
+      # Database connection
+      - DATABASE_URL=${STAGING_DATABASE_URL}
+      - POSTGRES_DB=${POSTGRES_DB:-event_api_staging}
+      - POSTGRES_USER=${POSTGRES_USER:-event_api_staging}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Service configuration
+      - NODE_ENV=staging
+      - MIX_ENV=dev  # Use dev mode for better debugging in staging
+      - PORT=3000
+      - ELIXIR_PORT=4000
+      - BAML_PORT=8080
+      - LOG_LEVEL=debug  # More verbose logging for staging
+      
+      # AI/LLM services
+      - OPENAI_API_KEY=${STAGING_OPENAI_API_KEY}
+      
+      # Internal service URLs
+      - HONO_API_URL=http://localhost:3000
+      - ELIXIR_SERVICE_URL=http://localhost:4000
+      - BAML_SERVICE_URL=http://localhost:8080
+      
+      # Staging-specific features
+      - ENABLE_DEBUG_ENDPOINTS=true
+      - DISABLE_RATE_LIMITING=true
+      - MOCK_EXTERNAL_SERVICES=false
+    depends_on:
+      staging-database:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health", "&&", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s  # Longer start period for staging
+      retries: 5
+    networks:
+      - event-api-staging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    labels:
+      - "environment=staging"
+      - "service=event-api"
+
+  # Staging database
+  staging-database:
+    image: pgvector/pgvector:pg15
+    container_name: event-api-db-staging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-event_api_staging}
+      POSTGRES_USER: ${POSTGRES_USER:-event_api_staging}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${STAGING_DB_PORT:-5433}:5432"  # Different port for staging
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./scripts/docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./scripts/staging/staging-test-data.sql:/docker-entrypoint-initdb.d/02-test-data.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-event_api_staging} -d ${POSTGRES_DB:-event_api_staging}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - event-api-staging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    labels:
+      - "environment=staging"
+      - "service=database"
+
+  # Staging monitoring and debugging tools
+  staging-logs:
+    image: nginx:alpine
+    container_name: event-api-logs-staging
+    ports:
+      - "8082:80"
+    volumes:
+      - ./scripts/staging/log-viewer.html:/usr/share/nginx/html/index.html:ro
+      - ./logs/staging:/usr/share/nginx/html/logs:ro
+    networks:
+      - event-api-staging
+    profiles:
+      - monitoring
+    labels:
+      - "environment=staging"
+      - "service=monitoring"
+
+volumes:
+  postgres_staging_data:
+    driver: local
+    labels:
+      - "environment=staging"
+
+networks:
+  event-api-staging:
+    driver: bridge
+    name: event-api-staging
+    labels:
+      - "environment=staging"
+
+# Staging environment variables should be set via CI/CD or .env.staging:
+# STAGING_DATABASE_URL=postgresql://user:pass@staging-database:5432/event_api_staging
+# POSTGRES_DB=event_api_staging
+# POSTGRES_USER=event_api_staging
+# POSTGRES_PASSWORD=staging_secure_password
+# STAGING_OPENAI_API_KEY=sk-staging-key-here
+# IMAGE_TAG=staging-latest
+# STAGING_DB_PORT=5433
