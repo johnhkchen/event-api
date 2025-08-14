@@ -10,6 +10,8 @@ import * as yaml from 'js-yaml';
 import { simpleGit } from 'simple-git';
 import type { KanbanBoard, Task, AgentInfo, AgentSummary } from './types.js';
 import { WorkspaceValidator } from './workspace-validator.js';
+import { AgentStateManager } from './agent-state-manager.js';
+import { AgentAssignmentValidator } from './agent-assignment-validator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,9 +29,20 @@ if (!existsSync(AGENTS_DIR)) {
 
 class AgentManager {
   private kanban: KanbanBoard;
+  public stateManager: AgentStateManager;
+  public assignmentValidator: AgentAssignmentValidator;
 
   constructor() {
     this.kanban = {} as KanbanBoard;
+    this.stateManager = new AgentStateManager({
+      kanbanPath: KANBAN_FILE,
+      agentsDir: AGENTS_DIR,
+      enableBackgroundMonitoring: false // Disable for now to avoid conflicts
+    });
+    this.assignmentValidator = new AgentAssignmentValidator({
+      kanbanPath: KANBAN_FILE,
+      agentsDir: AGENTS_DIR
+    });
     this.loadKanban();
   }
 
@@ -75,6 +88,29 @@ class AgentManager {
   }
 
   async getNextAvailableAgent(): Promise<string | null> {
+    this.log('Finding next available agent using state manager...');
+    
+    try {
+      const agentId = await this.stateManager.getNextAvailableAgent();
+      
+      if (agentId) {
+        this.log(`State manager found available agent: ${agentId}`);
+        return agentId;
+      } else {
+        this.error('All agent slots are occupied. Use "status" command to see active agents.');
+        return null;
+      }
+    } catch (error) {
+      this.error(`State manager error: ${error}`);
+      
+      // Fallback to legacy logic if state manager fails
+      this.warn('Falling back to legacy agent detection...');
+      return await this.getNextAvailableAgentLegacy();
+    }
+  }
+
+  // Fallback method (renamed from original)
+  private async getNextAvailableAgentLegacy(): Promise<string | null> {
     // Step 1: Check for explicitly available agents in kanban
     for (const [agentId, status] of Object.entries(this.kanban.agents)) {
       if (status.status === 'available' && !status.current_task) {
@@ -418,7 +454,33 @@ Co-Authored-By: Claude <noreply@anthropic.com>`;
     }
   }
 
-  private updateAgentStatus(agentId: string, taskId: string, status: 'working' | 'available' = 'working'): void {
+  private async updateAgentStatus(agentId: string, taskId: string, status: 'working' | 'available' = 'working'): Promise<void> {
+    try {
+      // Use state manager for atomic state transitions
+      const reason = status === 'working' ? `Task assignment: ${taskId}` : 'Task completion';
+      const result = await this.stateManager.transitionAgentState(agentId, status, taskId, reason);
+      
+      if (!result.valid) {
+        this.warn(`State transition validation failed for ${agentId}:`);
+        result.errors.forEach(error => this.warn(`  - ${error}`));
+        
+        // Fall back to legacy update but with warnings
+        this.warn('Falling back to legacy status update');
+        await this.updateAgentStatusLegacy(agentId, taskId, status);
+      } else {
+        // Reload kanban to reflect state manager changes
+        this.loadKanban();
+        this.success(`Agent ${agentId} state transition successful: ${status}${taskId ? ` (task: ${taskId})` : ''}`);
+      }
+    } catch (error) {
+      this.error(`State manager transition failed: ${error}`);
+      this.warn('Falling back to legacy status update');
+      await this.updateAgentStatusLegacy(agentId, taskId, status);
+    }
+  }
+
+  // Legacy method for fallback
+  private async updateAgentStatusLegacy(agentId: string, taskId: string, status: 'working' | 'available' = 'working'): Promise<void> {
     if (!this.kanban.agents[agentId]) {
       this.kanban.agents[agentId] = {
         status: 'available',
@@ -828,6 +890,48 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     if (!task) {
       this.error('No tasks available in backlog');
       return;
+    }
+    
+    // Validate assignment before proceeding
+    this.log(`Validating assignment: ${agentId} → ${task.id}`);
+    try {
+      const validation = await this.assignmentValidator.validateAssignment(agentId, task.id);
+      
+      if (!validation.valid) {
+        this.error(`Assignment validation failed (score: ${validation.assignmentScore})`);
+        validation.errors.forEach(error => {
+          this.error(`  ${error.code}: ${error.message}`);
+        });
+        
+        if (validation.warnings.length > 0) {
+          this.warn('Warnings:');
+          validation.warnings.forEach(warning => {
+            this.warn(`  ${warning.code}: ${warning.message}`);
+          });
+        }
+        
+        this.error('Cannot proceed with assignment due to validation errors');
+        return;
+      }
+      
+      if (validation.warnings.length > 0) {
+        this.warn(`Assignment has ${validation.warnings.length} warnings:`);
+        validation.warnings.forEach(warning => {
+          this.warn(`  ${warning.code}: ${warning.message}`);
+        });
+      }
+      
+      this.success(`Assignment validation passed (score: ${validation.assignmentScore}, confidence: ${Math.round(validation.confidence * 100)}%)`);
+      
+      if (validation.recommendations.length > 0) {
+        this.log('Recommendations:');
+        validation.recommendations.forEach(rec => {
+          this.log(`  ${rec}`);
+        });
+      }
+    } catch (error) {
+      this.error(`Assignment validation error: ${error}`);
+      this.warn('Proceeding with assignment despite validation failure');
     }
     
     // Create workspace
@@ -1569,6 +1673,64 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     this.saveKanban();
   }
 
+  /**
+   * Process review section with automated validation
+   */
+  async processReviewSection(dryRun: boolean = false): Promise<void> {
+    this.log('Starting automated review section processing');
+    
+    if (this.kanban.tasks.review.length === 0) {
+      this.warn('No tasks in review section');
+      return;
+    }
+
+    if (dryRun) {
+      this.log(`DRY RUN: Would process ${this.kanban.tasks.review.length} tasks`);
+      
+      for (const task of this.kanban.tasks.review) {
+        console.log(`${chalk.yellow('WOULD PROCESS:')} ${task.id} - ${task.title}`);
+        console.log(`  Files: ${task.files?.length || 0}`);
+        console.log(`  Priority: ${task.priority}`);
+        console.log('');
+      }
+      return;
+    }
+
+    try {
+      // Import ReviewProcessor dynamically to avoid circular dependencies
+      const { ReviewProcessor } = await import('./review-processor.js');
+      const processor = new ReviewProcessor();
+      
+      const results = await processor.processAllReviewTasks();
+      
+      // Update our internal kanban state (reload from file as processor modified it)
+      this.loadKanban();
+      
+      // Generate summary
+      const summary = {
+        completed: results.filter(r => r.disposition === 'completed').length,
+        partial: results.filter(r => r.disposition === 'partial').length,
+        stub: results.filter(r => r.disposition === 'stub').length,
+        failed: results.filter(r => r.disposition === 'failed').length,
+        split: results.filter(r => r.splitTasks && r.splitTasks.length > 0).length
+      };
+
+      console.log(chalk.cyan('\n🎯 REVIEW PROCESSING SUMMARY'));
+      console.log(chalk.cyan('============================='));
+      console.log(chalk.green(`✅ Completed: ${summary.completed}`));
+      console.log(chalk.yellow(`⚠️  Partial: ${summary.partial}`));
+      console.log(chalk.yellow(`📝 Stub: ${summary.stub}`));
+      console.log(chalk.red(`❌ Failed: ${summary.failed}`));
+      console.log(chalk.blue(`🔄 Split: ${summary.split}`));
+
+      this.success(`Processed ${results.length} review tasks successfully`);
+      
+    } catch (error) {
+      this.error(`Review processing failed: ${error}`);
+      throw error;
+    }
+  }
+
   async unassignTask(taskId: string): Promise<void> {
     console.log(chalk.blue(`🔄 Unassigning task ${taskId}...`));
 
@@ -1710,6 +1872,14 @@ program
   });
 
 program
+  .command('process-review')
+  .description('Process all tasks in review section with automated validation')
+  .option('--dry-run', 'Show what would be processed without making changes')
+  .action(async (options) => {
+    await manager.processReviewSection(options.dryRun || false);
+  });
+
+program
   .command('set-priority')
   .description('Set task priority')
   .argument('<task-id>', 'Task ID to update')
@@ -1732,6 +1902,161 @@ program
   .argument('<task-id>', 'Task ID to unassign')
   .action(async (taskId) => {
     await manager.unassignTask(taskId);
+  });
+
+program
+  .command('validate-assignment')
+  .description('Validate an agent assignment before execution')
+  .argument('<agent-id>', 'Agent ID (e.g., agent-001)')
+  .argument('<task-id>', 'Task ID to assign')
+  .option('--bypass-warnings', 'Bypass warning-level validation failures')
+  .action(async (agentId, taskId, options) => {
+    try {
+      const validation = await manager.assignmentValidator.validateAssignment(
+        agentId, 
+        taskId, 
+        options.bypassWarnings || false
+      );
+      
+      console.log(chalk.cyan('\n🔍 ASSIGNMENT VALIDATION REPORT'));
+      console.log(chalk.cyan('================================'));
+      console.log(`Agent: ${chalk.yellow(agentId)}`);
+      console.log(`Task: ${chalk.yellow(taskId)}`);
+      console.log(`Result: ${validation.valid ? chalk.green('✅ VALID') : chalk.red('❌ INVALID')}`);
+      console.log(`Score: ${chalk.blue(validation.assignmentScore)}/100`);
+      console.log(`Confidence: ${chalk.blue(Math.round(validation.confidence * 100))}%`);
+      
+      if (validation.errors.length > 0) {
+        console.log('\n❌ Errors:');
+        validation.errors.forEach(error => {
+          console.log(`  ${chalk.red(error.code)}: ${error.message}`);
+          console.log(`    Resolution: ${chalk.gray(error.resolution)}`);
+        });
+      }
+      
+      if (validation.warnings.length > 0) {
+        console.log('\n⚠️  Warnings:');
+        validation.warnings.forEach(warning => {
+          console.log(`  ${chalk.yellow(warning.code)}: ${warning.message}`);
+          console.log(`    Impact: ${chalk.gray(warning.impact)}`);
+        });
+      }
+      
+      if (validation.recommendations.length > 0) {
+        console.log('\n💡 Recommendations:');
+        validation.recommendations.forEach(rec => {
+          console.log(`  ${rec}`);
+        });
+      }
+      
+      process.exit(validation.valid ? 0 : 1);
+    } catch (error) {
+      console.error(chalk.red('Validation failed:'), error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('check-state')
+  .description('Check agent state consistency')
+  .option('--agent-id <id>', 'Check specific agent')
+  .action(async (options) => {
+    try {
+      if (options.agentId) {
+        const state = await manager.stateManager.getAgentState(options.agentId);
+        console.log(`Agent ${options.agentId} state:`, JSON.stringify(state, null, 2));
+      } else {
+        const report = await manager.stateManager.performConsistencyCheck();
+        
+        console.log(chalk.cyan('\n🔍 STATE CONSISTENCY REPORT'));
+        console.log(chalk.cyan('==========================='));
+        console.log(`Total Agents: ${report.totalAgents}`);
+        console.log(`Consistent: ${chalk.green(report.consistentAgents)}`);
+        console.log(`Inconsistent: ${chalk.red(report.inconsistentAgents)}`);
+        
+        if (report.issues.length > 0) {
+          console.log('\n🚨 Issues:');
+          report.issues.forEach(issue => {
+            const severityColor = issue.severity === 'critical' ? chalk.red :
+                               issue.severity === 'high' ? chalk.yellow :
+                               issue.severity === 'medium' ? chalk.blue : chalk.gray;
+            console.log(`  ${severityColor(issue.severity.toUpperCase())} ${issue.agentId}: ${issue.description}`);
+            console.log(`    Resolution: ${chalk.gray(issue.resolution)}`);
+          });
+        }
+        
+        if (report.recommendations.length > 0) {
+          console.log('\n💡 Recommendations:');
+          report.recommendations.forEach(rec => console.log(`  - ${rec}`));
+        }
+      }
+    } catch (error) {
+      console.error(chalk.red('State check failed:'), error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('recover-agent')
+  .description('Recover from failed agent state transition')
+  .argument('<agent-id>', 'Agent ID to recover')
+  .action(async (agentId) => {
+    try {
+      console.log(chalk.blue(`🔧 Recovering agent ${agentId}...`));
+      
+      const result = await manager.stateManager.recoverFromFailedTransition(
+        agentId, 
+        'Manual recovery requested via CLI'
+      );
+      
+      if (result.valid) {
+        console.log(chalk.green(`✅ Recovery successful for ${agentId}`));
+        if (result.warnings.length > 0) {
+          console.log('⚠️  Warnings during recovery:');
+          result.warnings.forEach(warning => console.log(`  - ${warning}`));
+        }
+      } else {
+        console.log(chalk.red(`❌ Recovery failed for ${agentId}`));
+        result.errors.forEach(error => console.log(`  - ${error}`));
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(chalk.red('Recovery failed:'), error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('state-history')
+  .description('Show agent state transition history')
+  .option('--agent-id <id>', 'Show history for specific agent')
+  .action(async (options) => {
+    try {
+      const history = manager.stateManager.getTransitionHistory(options.agentId);
+      
+      console.log(chalk.cyan('\n📋 STATE TRANSITION HISTORY'));
+      console.log(chalk.cyan('============================'));
+      
+      if (history.length === 0) {
+        console.log('No state transitions recorded');
+        return;
+      }
+      
+      history.forEach(transition => {
+        const timeColor = chalk.gray(transition.timestamp);
+        const agentColor = chalk.yellow(transition.agentId);
+        const stateColor = chalk.blue(`${transition.fromStatus} → ${transition.toStatus}`);
+        const reasonColor = chalk.green(transition.reason);
+        
+        console.log(`${timeColor} ${agentColor}: ${stateColor} ${reasonColor}`);
+        if (transition.taskId) {
+          console.log(`  Task: ${chalk.cyan(transition.taskId)}`);
+        }
+      });
+    } catch (error) {
+      console.error(chalk.red('History retrieval failed:'), error);
+      process.exit(1);
+    }
   });
 
 program.parse();

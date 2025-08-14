@@ -1,0 +1,96 @@
+# Performance Monitoring Stack Configuration
+# Sets up Grafana dashboards for k6 performance testing results
+
+version: '3.8'
+
+services:
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: event-api-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=performance2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - monitoring
+
+  # InfluxDB for k6 metrics storage
+  influxdb:
+    image: influxdb:2.7
+    container_name: event-api-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=k6
+      - DOCKER_INFLUXDB_INIT_PASSWORD=performance2024
+      - DOCKER_INFLUXDB_INIT_ORG=event-api
+      - DOCKER_INFLUXDB_INIT_BUCKET=k6-metrics
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    networks:
+      - monitoring
+
+  # Telegraf for system metrics collection
+  telegraf:
+    image: telegraf:1.28
+    container_name: event-api-telegraf
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc:/host/etc:ro
+    environment:
+      - HOST_PROC=/host/proc
+      - HOST_SYS=/host/sys
+      - HOST_ETC=/host/etc
+    depends_on:
+      - influxdb
+    networks:
+      - monitoring
+      - event-api-network
+
+  # Prometheus for application metrics (alternative/additional to InfluxDB)
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: event-api-prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+      - event-api-network
+
+volumes:
+  grafana_data:
+    driver: local
+  influxdb_data:
+    driver: local
+  influxdb_config:
+    driver: local
+  prometheus_data:
+    driver: local
+
+networks:
+  monitoring:
+    driver: bridge
+  event-api-network:
+    external: true
+    name: event-api-network

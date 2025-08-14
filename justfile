@@ -241,6 +241,21 @@ help:
     @echo "  just unassign TASK-ID 🔄 Unassign task and move to backlog"
     @echo "  just force-clean ID   🧹 Force clean agent workspace"
     @echo ""
+    @echo "Validation Framework:"
+    @echo "  just validate-review        🔍 Analyze review section (safe dry-run)"
+    @echo "  just validate-review-apply  ⚡ Apply validation changes (modifies kanban)"
+    @echo "  just validate-summary       📊 Quick validation overview"
+    @echo "  just backup-kanban          📦 Create kanban backup"
+    @echo "  just validate-kanban        ✅ Check kanban integrity"
+    @echo "  just test-validation        🧪 Run validation framework tests"
+    @echo ""
+    @echo "YAML Health & Validation:"
+    @echo "  just yaml-check       ⚡ Quick YAML health status"
+    @echo "  just yaml-health      🔍 Comprehensive YAML health analysis"
+    @echo "  just yaml-health-fix  🔧 Fix YAML health issues automatically"
+    @echo "  just yaml-backups     📋 List available YAML backups"
+    @echo "  just yaml-restore N   🔄 Restore from backup #N"
+    @echo ""
     @echo "Development:"
     @echo "  just dev              🔧 Start development mode"
     @echo "  just build            🏗️  Build TypeScript"
@@ -259,6 +274,110 @@ help:
 # Default recipe shows help
 default:
     @just help
+
+# YAML HEALTH CHECK COMMANDS
+# Comprehensive YAML validation and health checking
+
+# Check YAML health (safe, read-only analysis)
+yaml-health:
+    @echo "🔍 YAML HEALTH CHECK - Safe Analysis"
+    @echo ""
+    tsx scripts/yaml-health-checker.ts --verbose
+
+# Check and fix YAML health issues (applies fixes)
+yaml-health-fix:
+    @echo "🔧 YAML HEALTH CHECK - Auto-fix Mode"
+    @echo "⚠️  WARNING: This will modify kanban.yaml after backup"
+    @echo ""
+    tsx scripts/yaml-health-checker.ts --fix --verbose
+
+# Quick YAML health status
+yaml-check:
+    @echo "⚡ Quick YAML Health Check"
+    tsx scripts/yaml-health-checker.ts
+
+# List YAML backups
+yaml-backups:
+    tsx scripts/yaml-health-checker.ts --list-backups
+
+# Restore from YAML backup (usage: just yaml-restore 1)
+yaml-restore BACKUP_NUMBER:
+    @echo "🔄 Restoring YAML from backup #{{BACKUP_NUMBER}}"
+    @echo "⚠️  WARNING: This will overwrite current kanban.yaml"
+    tsx scripts/yaml-health-checker.ts --restore {{BACKUP_NUMBER}}
+
+# VALIDATION FRAMEWORK COMMANDS
+# Systematic review section validation and processing
+
+# Run full validation with backup (dry-run mode)
+validate-review:
+    @echo "🔍 VALIDATION FRAMEWORK - Review Section Analysis"
+    @echo ""
+    cd agents/agent-003 && tsx scripts/validation-engine.ts
+
+# Run validation with changes applied (use with caution)
+validate-review-apply:
+    @echo "⚡ VALIDATION FRAMEWORK - Applying Changes to Kanban"
+    @echo "⚠️  WARNING: This will modify kanban.yaml after backup"
+    @echo ""
+    cd agents/agent-003 && tsx scripts/validation-engine.ts --no-dry-run
+
+# Run validation with verbose output
+validate-review-verbose:
+    @echo "🔍 VALIDATION FRAMEWORK - Detailed Analysis"
+    @echo ""
+    cd agents/agent-003 && tsx scripts/validation-engine.ts --verbose
+
+# Test the validation framework
+test-validation:
+    @echo "🧪 Testing Validation Framework"
+    @echo ""
+    cd agents/agent-003 && npm test tests/validation-framework.test.ts
+
+# Kanban backup management
+backup-kanban:
+    @echo "📦 Creating Kanban Backup"
+    cd agents/agent-003 && tsx scripts/kanban-backup-manager.ts create --verbose
+
+# List available kanban backups
+list-backups:
+    @echo "📋 Available Kanban Backups"
+    cd agents/agent-003 && tsx scripts/kanban-backup-manager.ts list
+
+# Restore from backup (usage: just restore-backup <backup-path>)
+restore-backup BACKUP_PATH:
+    @echo "🔄 Restoring Kanban from Backup"
+    @echo "⚠️  WARNING: This will overwrite current kanban.yaml"
+    cd agents/agent-003 && tsx scripts/kanban-backup-manager.ts restore {{BACKUP_PATH}}
+
+# Validate kanban integrity
+validate-kanban:
+    @echo "🔍 Validating Kanban Integrity"
+    cd agents/agent-003 && tsx scripts/kanban-backup-manager.ts validate
+
+# Quick validation summary (safe, no changes)
+validate-summary:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    echo "📊 QUICK VALIDATION SUMMARY"
+    echo ""
+    echo "📋 Current Review Section:"
+    
+    # Count tasks in review section using yq or basic grep
+    if command -v yq >/dev/null 2>&1; then
+        REVIEW_COUNT=$(yq '.tasks.review | length' kanban.yaml)
+        echo "   Tasks in review: $REVIEW_COUNT"
+    else
+        echo "   Run 'just validate-review' for detailed analysis"
+    fi
+    
+    echo ""
+    echo "💡 Available Validation Commands:"
+    echo "   just validate-review        🔍 Dry-run analysis (recommended first)"
+    echo "   just validate-review-verbose 📝 Detailed output"
+    echo "   just validate-kanban        ✅ Integrity check"
+    echo "   just backup-kanban          📦 Create safety backup"
 
 # Development commands
 dev:

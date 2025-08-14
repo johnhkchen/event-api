@@ -5,6 +5,15 @@ export interface KanbanMetadata {
   max_agents: number;
   created: string;
   last_updated: string;
+  task_summary?: {
+    total_tasks: number;
+    backlog: number;
+    todo: number;
+    in_progress: number;
+    review: number;
+    done: number;
+    completion_percentage: string;
+  };
 }
 
 export interface AgentStatus {
@@ -33,6 +42,11 @@ export interface Task {
   created?: string;
   started?: string | null;
   completed?: string;
+  disposition_reason?: string;
+  validation_notes?: string[];
+  processing_confidence?: number;
+  validation_status?: string;
+  source_task?: string;
 }
 
 export interface TaskPipeline {
@@ -41,6 +55,7 @@ export interface TaskPipeline {
   in_progress: Task[];
   review: Task[];
   done: Task[];
+  [key: string]: Task[]; // Index signature for dynamic access
 }
 
 export interface AssignmentRules {

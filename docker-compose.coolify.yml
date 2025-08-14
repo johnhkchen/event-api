@@ -1,0 +1,313 @@
+# Event API - Coolify Production Deployment Configuration
+# This Docker Compose file is optimized for Coolify's automatic detection and deployment
+# Assumes DEPLOY-FEAT-001 will provide a functional `flox containerize` command
+
+version: '3.8'
+
+services:
+  # Main application service (Flox containerized multi-service)
+  event-api:
+    image: event-api:${IMAGE_TAG:-latest}
+    container_name: event-api-app
+    labels:
+      # Coolify service discovery labels
+      - "coolify.managed=true"
+      - "coolify.name=event-api"
+      - "coolify.type=application"
+      - "coolify.healthcheck.enabled=true"
+      - "coolify.healthcheck.path=/health"
+      - "coolify.healthcheck.port=3000"
+      - "coolify.domain=${DOMAIN:-api.localhost}"
+      - "coolify.ssl=true"
+      - "coolify.ssl.letsencrypt=true"
+    ports:
+      - "${HONO_PORT:-3000}:3000"     # Primary API endpoint (public)
+      - "${ELIXIR_PORT:-4000}:4000"   # Internal processing service
+      - "${BAML_PORT:-8080}:8080"     # AI/ML service
+    environment:
+      # Production environment
+      - NODE_ENV=production
+      - MIX_ENV=prod
+      
+      # Service ports
+      - PORT=3000
+      - HONO_PORT=3000
+      - ELIXIR_PORT=4000
+      - BAML_PORT=8080
+      
+      # Database connection (configured via Coolify UI)
+      - DATABASE_URL=${DATABASE_URL}
+      - POSTGRES_DB=${POSTGRES_DB:-event_api_production}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # AI/ML services (configured via Coolify UI)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      
+      # Internal service communication
+      - HONO_API_URL=http://localhost:3000
+      - ELIXIR_SERVICE_URL=http://localhost:4000
+      - BAML_SERVICE_URL=http://localhost:8080
+      
+      # Security and performance
+      - TRUST_PROXY=true
+      - RATE_LIMIT_ENABLED=true
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Health check configuration
+      - HEALTH_CHECK_TIMEOUT=10000
+      - HEALTH_CHECK_INTERVAL=30000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: |
+        curl -f http://localhost:3000/health && 
+        curl -f http://localhost:4000/health && 
+        curl -f http://localhost:8080/health
+      interval: 30s
+      timeout: 15s
+      start_period: 60s
+      retries: 3
+      start_interval: 5s
+    networks:
+      - event-api-network
+    volumes:
+      # Persistent data for logs and temporary files
+      - app-logs:/app/logs
+      - app-tmp:/app/tmp
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          memory: ${APP_MEMORY_LIMIT:-2G}
+          cpus: ${APP_CPU_LIMIT:-2.0}
+        reservations:
+          memory: ${APP_MEMORY_RESERVE:-512M}
+          cpus: ${APP_CPU_RESERVE:-0.5}
+
+  # PostgreSQL database with required extensions
+  postgres:
+    image: pgvector/pgvector:pg15-v0.7.4
+    container_name: event-api-postgres
+    labels:
+      - "coolify.managed=true"
+      - "coolify.name=event-api-postgres"
+      - "coolify.type=database"
+      - "coolify.backup.enabled=true"
+      - "coolify.backup.frequency=daily"
+      - "coolify.backup.retention=30"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-event_api_production}
+      - POSTGRES_USER=${POSTGRES_USER:-event_api_prod}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+      # Performance tuning
+      - POSTGRES_SHARED_PRELOAD_LIBRARIES=pg_stat_statements,pgvector
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-200}
+      - POSTGRES_SHARED_BUFFERS=${POSTGRES_SHARED_BUFFERS:-256MB}
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=${POSTGRES_EFFECTIVE_CACHE_SIZE:-1GB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-logs:/var/log/postgresql
+      - ./scripts/docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./migrations/shared:/docker-entrypoint-initdb.d/migrations:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-event_api_prod} -d ${POSTGRES_DB:-event_api_production}"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - event-api-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          memory: ${DB_MEMORY_LIMIT:-1G}
+          cpus: ${DB_CPU_LIMIT:-1.0}
+        reservations:
+          memory: ${DB_MEMORY_RESERVE:-256M}
+          cpus: ${DB_CPU_RESERVE:-0.25}
+
+  # Redis for caching and session management (optional but recommended)
+  redis:
+    image: redis:7.2-alpine
+    container_name: event-api-redis
+    labels:
+      - "coolify.managed=true"
+      - "coolify.name=event-api-redis"
+      - "coolify.type=cache"
+    command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-256mb} --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - event-api-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY_LIMIT:-512M}
+          cpus: ${REDIS_CPU_LIMIT:-0.5}
+
+  # Nginx reverse proxy for advanced routing and SSL termination
+  nginx:
+    image: nginx:alpine
+    container_name: event-api-nginx
+    labels:
+      - "coolify.managed=true"
+      - "coolify.name=event-api-nginx"
+      - "coolify.type=proxy"
+      - "coolify.domain=${DOMAIN:-api.localhost}"
+      - "coolify.ssl=true"
+      - "coolify.ssl.letsencrypt=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+      - nginx-logs:/var/log/nginx
+      - nginx-cache:/var/cache/nginx
+      - letsencrypt-certs:/etc/letsencrypt:ro
+    depends_on:
+      - event-api
+    restart: unless-stopped
+    networks:
+      - event-api-network
+      - web
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+networks:
+  event-api-network:
+    driver: bridge
+    name: event-api-network
+    labels:
+      - "coolify.managed=true"
+  web:
+    external: true
+    name: web
+
+volumes:
+  # Application volumes
+  app-logs:
+    driver: local
+    name: event-api-logs
+    labels:
+      - "coolify.managed=true"
+      - "coolify.backup.enabled=true"
+  
+  app-tmp:
+    driver: local
+    name: event-api-tmp
+    labels:
+      - "coolify.managed=true"
+
+  # Database volumes (critical for data persistence)
+  postgres-data:
+    driver: local
+    name: event-api-postgres-data
+    labels:
+      - "coolify.managed=true"
+      - "coolify.backup.enabled=true"
+      - "coolify.backup.priority=high"
+      - "coolify.backup.frequency=daily"
+      - "coolify.backup.retention=30"
+  
+  postgres-logs:
+    driver: local
+    name: event-api-postgres-logs
+    labels:
+      - "coolify.managed=true"
+
+  # Redis volume
+  redis-data:
+    driver: local
+    name: event-api-redis-data
+    labels:
+      - "coolify.managed=true"
+      - "coolify.backup.enabled=true"
+
+  # Nginx volumes
+  nginx-logs:
+    driver: local
+    name: event-api-nginx-logs
+    labels:
+      - "coolify.managed=true"
+  
+  nginx-cache:
+    driver: local
+    name: event-api-nginx-cache
+  
+  letsencrypt-certs:
+    driver: local
+    name: event-api-letsencrypt-certs
+    labels:
+      - "coolify.managed=true"
+      - "coolify.backup.enabled=true"
+
+# Coolify-specific configuration
+x-coolify:
+  project:
+    name: "Event API"
+    description: "AI-powered event aggregation and processing API"
+    
+  domains:
+    primary: "${DOMAIN:-api.localhost}"
+    aliases:
+      - "www.${DOMAIN:-api.localhost}"
+      - "admin.${DOMAIN:-admin.localhost}"
+      
+  ssl:
+    enabled: true
+    provider: "letsencrypt"
+    email: "${SSL_EMAIL}"
+    
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention: 30
+    
+  monitoring:
+    enabled: true
+    alerts:
+      email: "${ALERT_EMAIL}"
+      webhook: "${ALERT_WEBHOOK_URL}"
+    
+  deployment:
+    strategy: "rolling"
+    health_check_grace_period: 60
+    
+  environment:
+    file: ".env.production"
+    encryption: true

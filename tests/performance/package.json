@@ -1,0 +1,40 @@
+{
+  "name": "event-api-performance-tests",
+  "version": "1.0.0",
+  "description": "Performance testing suite for Event API microservices",
+  "main": "run-tests.sh",
+  "scripts": {
+    "test": "./run-tests.sh all",
+    "test:api": "./run-tests.sh api",
+    "test:database": "./run-tests.sh database", 
+    "test:scraping": "./run-tests.sh scraping",
+    "test:pipeline": "./run-tests.sh pipeline",
+    "test:profiling": "./run-tests.sh profiling",
+    "benchmark:database": "pgbench -h localhost -p 5432 -U event_api -d event_api_dev -f database-pgbench.sql -c 25 -j 4 -T 180 -P 30 --report-latencies",
+    "benchmark:vector": "psql -h localhost -p 5432 -U event_api -d event_api_dev -f vector-search-benchmark.sql",
+    "install:k6": "curl https://github.com/grafana/k6/releases/download/v0.47.0/k6-v0.47.0-linux-amd64.tar.gz -L | tar xvz --strip-components 1",
+    "report:generate": "node generate-performance-report.js",
+    "ci:setup": "npm run install:k6",
+    "ci:test": "npm run test && npm run report:generate"
+  },
+  "devDependencies": {
+    "k6": "^0.47.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "keywords": [
+    "performance",
+    "testing",
+    "k6", 
+    "postgresql",
+    "microservices",
+    "load-testing"
+  ],
+  "author": "Event API Team",
+  "license": "MIT"
+}

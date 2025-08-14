@@ -1,0 +1,389 @@
+name: Performance Testing Pipeline
+
+on:
+  # Run on performance-critical changes
+  push:
+    paths:
+      - 'services/**'
+      - 'migrations/**'
+      - 'tests/performance/**'
+      - '.github/workflows/performance-testing.yml'
+  pull_request:
+    paths:
+      - 'services/**'
+      - 'migrations/**'
+  # Manual trigger for performance validation
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of performance test to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - api
+        - database
+        - scraping
+        - pipeline
+        - profiling
+      duration:
+        description: 'Test duration (minutes)'
+        required: false
+        default: '10'
+        type: string
+
+env:
+  POSTGRES_DB: event_api_test
+  POSTGRES_USER: event_api
+  POSTGRES_PASSWORD: test_password_2024
+  K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+
+jobs:
+  # Setup test environment
+  setup-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      test-id: ${{ steps.generate-id.outputs.test-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate test ID
+        id: generate-id
+        run: echo "test-id=perf-$(date +%Y%m%d-%H%M%S)-${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Cache k6 installation
+        uses: actions/cache@v3
+        with:
+          path: /usr/bin/k6
+          key: k6-${{ runner.os }}
+
+  # Database performance testing
+  database-performance:
+    needs: setup-environment
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client k6
+
+      - name: Setup database schema
+        run: |
+          PGPASSWORD=${{ env.POSTGRES_PASSWORD }} psql -h localhost -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }} -f migrations/001_initial_schema.sql
+
+      - name: Seed test data
+        run: |
+          PGPASSWORD=${{ env.POSTGRES_PASSWORD }} psql -h localhost -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }} -f migrations/seeds/performance_test_data.sql
+
+      - name: Run database performance tests
+        run: |
+          cd tests/performance
+          ./run-tests.sh database
+
+      - name: Upload database test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: database-performance-results-${{ needs.setup-environment.outputs.test-id }}
+          path: test-results/performance/*/database-*
+          retention-days: 30
+
+  # API performance testing  
+  api-performance:
+    needs: setup-environment
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    strategy:
+      matrix:
+        service: [hono-api, elixir_service, baml-service]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (for Hono service)
+        if: matrix.service == 'hono-api'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: services/hono-api/package-lock.json
+
+      - name: Setup Elixir (for Elixir service)
+        if: matrix.service == 'elixir_service'
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.15'
+          otp-version: '26'
+
+      - name: Setup Python (for BAML service)
+        if: matrix.service == 'baml-service'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Build and start services
+        run: |
+          # Use docker-compose for integrated testing
+          docker-compose up -d database
+          sleep 10  # Wait for database
+          
+          # Start services based on matrix
+          if [ "${{ matrix.service }}" = "hono-api" ]; then
+            cd services/hono-api
+            npm ci
+            npm run build
+            DATABASE_URL="postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}" npm start &
+            sleep 15
+          elif [ "${{ matrix.service }}" = "elixir_service" ]; then
+            cd services/elixir_service
+            mix deps.get
+            MIX_ENV=test DATABASE_URL="postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}" mix phx.server &
+            sleep 20
+          elif [ "${{ matrix.service }}" = "baml-service" ]; then
+            cd services/baml-service
+            pip install -r requirements.txt
+            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" python -m uvicorn src.main:app --port 8080 &
+            sleep 10
+          fi
+
+      - name: Run API performance tests
+        run: |
+          cd tests/performance
+          # Run service-specific performance tests
+          timeout 15m ./run-tests.sh api
+
+      - name: Collect performance metrics
+        if: always()
+        run: |
+          # Collect additional system metrics
+          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" > test-results/performance/*/docker-stats.txt || true
+          ps aux > test-results/performance/*/system-processes.txt || true
+
+      - name: Upload API test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: api-performance-results-${{ matrix.service }}-${{ needs.setup-environment.outputs.test-id }}
+          path: test-results/performance/*/
+          retention-days: 30
+
+  # Integration performance testing
+  integration-performance:
+    needs: [setup-environment, database-performance]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'pipeline' || github.event.inputs.test_type == 'scraping'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup services with docker-compose
+        run: |
+          # Start all services for integration testing
+          docker-compose up -d
+          
+          # Wait for all services to be ready
+          timeout 300s bash -c 'until docker-compose exec -T database pg_isready -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }}; do sleep 5; done'
+          timeout 300s bash -c 'until curl -f http://localhost:3000/health; do sleep 5; done'
+          timeout 300s bash -c 'until curl -f http://localhost:4000/health; do sleep 5; done' 
+          timeout 300s bash -c 'until curl -f http://localhost:8080/health; do sleep 5; done'
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run scraping performance tests
+        if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'scraping'
+        run: |
+          cd tests/performance
+          timeout 20m ./run-tests.sh scraping
+
+      - name: Run pipeline performance tests  
+        if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'pipeline'
+        run: |
+          cd tests/performance
+          timeout 25m ./run-tests.sh pipeline
+
+      - name: Run resource profiling
+        if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'profiling'
+        run: |
+          cd tests/performance
+          timeout 15m ./run-tests.sh profiling
+
+      - name: Collect docker logs
+        if: always()
+        run: |
+          mkdir -p test-results/performance/docker-logs/
+          docker-compose logs > test-results/performance/docker-logs/all-services.log
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-performance-results-${{ needs.setup-environment.outputs.test-id }}
+          path: test-results/performance/*/
+          retention-days: 30
+
+  # Performance regression analysis
+  analyze-results:
+    needs: [setup-environment, database-performance, api-performance, integration-performance]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v3
+        with:
+          path: test-results/
+
+      - name: Install analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq bc
+
+      - name: Analyze performance results
+        run: |
+          # Create comprehensive performance analysis
+          mkdir -p analysis/
+          
+          # Extract key metrics from k6 JSON outputs
+          find test-results/ -name "*results.json" | while read file; do
+            echo "=== Analysis for $file ===" >> analysis/performance-summary.txt
+            
+            # Extract p95 response times
+            jq -r '.metrics.http_req_duration.values.["p(95)"] // "N/A"' "$file" >> analysis/performance-summary.txt
+            
+            # Extract error rates  
+            jq -r '.metrics.http_req_failed.values.rate // "N/A"' "$file" >> analysis/performance-summary.txt
+            
+            echo "" >> analysis/performance-summary.txt
+          done
+          
+          # Check for performance regressions (simplified)
+          if [ -f "analysis/performance-baseline.json" ]; then
+            echo "Checking for performance regressions..."
+            # Compare against baseline (implementation would go here)
+          fi
+
+      - name: Generate performance report
+        run: |
+          cat > analysis/performance-report.md << 'EOF'
+          # Performance Test Report
+          
+          **Test ID:** ${{ needs.setup-environment.outputs.test-id }}  
+          **Date:** $(date)  
+          **Commit:** ${{ github.sha }}  
+          **Branch:** ${{ github.ref_name }}  
+          
+          ## Test Results Summary
+          
+          ### Success Criteria Status
+          - [ ] API p95 response time < 200ms
+          - [ ] Database queries p95 < 200ms  
+          - [ ] Scraping operations < 5% failure rate
+          - [ ] Processing pipeline throughput > 80%
+          - [ ] Memory usage within limits
+          
+          ### Detailed Results
+          
+          ```
+          $(cat analysis/performance-summary.txt)
+          ```
+          
+          ## Next Steps
+          
+          - Review any failing thresholds
+          - Compare against historical performance baseline  
+          - Address any identified performance bottlenecks
+          
+          EOF
+
+      - name: Upload performance analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-analysis-${{ needs.setup-environment.outputs.test-id }}
+          path: analysis/
+          retention-days: 90
+
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'analysis/performance-report.md';
+            
+            if (fs.existsSync(reportPath)) {
+              const report = fs.readFileSync(reportPath, 'utf8');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## Performance Test Results\n\n${report}`
+              });
+            }
+
+  # Performance monitoring alert
+  performance-alert:
+    needs: [analyze-results]
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+      - name: Send performance alert
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Performance tests failed on main branch"
+          # Integration with monitoring/alerting system would go here
+          # Example: Send to Slack, PagerDuty, etc.

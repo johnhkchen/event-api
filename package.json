@@ -10,7 +10,12 @@
     "agent:resume": "INIT_CWD=\"$PWD\" tsx scripts/agent-manager.ts resume",
     "agent:run": "INIT_CWD=\"$PWD\" tsx scripts/agent-manager.ts run",
     "build": "tsc",
-    "dev": "tsx watch scripts/agent-manager.ts"
+    "dev": "tsx watch scripts/agent-manager.ts",
+    "test": "tsx --test tests/scripts/*.test.ts",
+    "test:review-processor": "tsx tests/scripts/review-processor.test.ts",
+    "test:backup-manager": "tsx tests/scripts/backup-manager.test.ts",
+    "lint": "tsc --noEmit",
+    "validate": "npm run lint && npm run test"
   },
   "bin": {
     "agent-manager": "./scripts/agent-manager.ts"
