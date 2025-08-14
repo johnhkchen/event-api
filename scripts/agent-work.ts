@@ -5,6 +5,7 @@ import { join, resolve } from 'path';
 import chalk from 'chalk';
 import * as yaml from 'js-yaml';
 import type { KanbanBoard, Task } from './types.js';
+import { WorkspaceValidator } from './workspace-validator.js';
 
 interface AgentWorkContext {
   agentId: string;
@@ -34,13 +35,14 @@ class AgentWorkHandler {
     const kanban = yaml.load(kanbanContent) as KanbanBoard;
 
     // Find current task for this agent
-    let currentTask = null;
+    let currentTask: Task | null = null;
     const agentStatus = kanban.agents[agentId];
     if (agentStatus?.current_task) {
       // Look for task in in_progress first, then other states
       currentTask = kanban.tasks.in_progress.find(t => t.id === agentStatus.current_task) ||
                    kanban.tasks.todo.find(t => t.id === agentStatus.current_task) ||
-                   kanban.tasks.review.find(t => t.id === agentStatus.current_task);
+                   kanban.tasks.review.find(t => t.id === agentStatus.current_task) ||
+                   null;
     }
 
     return {
@@ -177,11 +179,27 @@ ${otherAgents.length > 0 ? otherAgents.map(a => `  🔄 ${a}`).join('\n') : '  N
 // Main execution
 async function main() {
   try {
+    // CRITICAL: Validate execution context before any processing
+    WorkspaceValidator.validateCommand('agent', 'work');
+    
     const workspaceDir = process.env.WORKSPACE_DIR || process.cwd();
+    
+    // Additional workspace integrity check
+    const workspaceValidation = WorkspaceValidator.validateAgentWorkspace(workspaceDir);
+    if (!workspaceValidation.valid) {
+      console.error(chalk.red('❌ WORKSPACE VALIDATION FAILED'));
+      console.error('');
+      console.error(chalk.red(`Error: ${workspaceValidation.error}`));
+      console.error('');
+      console.error(chalk.yellow('💡 How to fix:'));
+      console.error(workspaceValidation.guidance);
+      process.exit(1);
+    }
+    
     const handler = new AgentWorkHandler(workspaceDir);
     await handler.run();
   } catch (error) {
-    console.error(chalk.red('❌ Error:'), error.message);
+    console.error(chalk.red('❌ Error:'), error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

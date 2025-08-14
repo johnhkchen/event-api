@@ -22,16 +22,16 @@ export interface TaskRequirement {
 export interface Task {
   id: string;
   title: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: 'critical' | 'high' | 'normal' | 'low';
   estimated_hours: number;
   description: string;
   requirements: string[];
   files: string[];
   dependencies: string[];
   labels: string[];
-  assignee?: string;
+  assignee?: string | null;
   created?: string;
-  started?: string;
+  started?: string | null;
   completed?: string;
 }
 
@@ -44,7 +44,7 @@ export interface TaskPipeline {
 }
 
 export interface AssignmentRules {
-  priority_order: ('high' | 'medium' | 'low')[];
+  priority_order: ('critical' | 'high' | 'normal' | 'low')[];
   agent_specialties: Record<string, string[]>;
   auto_assign: boolean;
   respect_dependencies: boolean;

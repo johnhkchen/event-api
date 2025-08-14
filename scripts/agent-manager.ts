@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import * as yaml from 'js-yaml';
 import { simpleGit } from 'simple-git';
 import type { KanbanBoard, Task, AgentInfo, AgentSummary } from './types.js';
+import { WorkspaceValidator } from './workspace-validator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,6 +29,7 @@ class AgentManager {
   private kanban: KanbanBoard;
 
   constructor() {
+    this.kanban = {} as KanbanBoard;
     this.loadKanban();
   }
 
@@ -73,24 +75,75 @@ class AgentManager {
   }
 
   async getNextAvailableAgent(): Promise<string | null> {
-    for (let i = 1; i <= this.kanban.metadata.max_agents; i++) {
-      const agentId = `agent-${i.toString().padStart(3, '0')}`;
-      const worktreePath = `./agents/${agentId}`;
-      
-      // Check if worktree exists and is active
-      try {
-        const worktrees = await git.raw(['worktree', 'list']);
-        if (!worktrees.includes(worktreePath)) {
-          return agentId;
-        }
-      } catch (error) {
-        this.error(`Failed to check worktrees: ${error}`);
-        return null;
+    // Step 1: Check for explicitly available agents in kanban
+    for (const [agentId, status] of Object.entries(this.kanban.agents)) {
+      if (status.status === 'available' && !status.current_task) {
+        this.log(`Found available agent: ${agentId}`);
+        return agentId;
       }
     }
     
-    this.error('All agent slots are occupied. Use "status" command to see active agents.');
+    // Step 2: Check for agents that can be reassigned (cleanup inconsistencies)
+    for (let i = 1; i <= this.kanban.metadata.max_agents; i++) {
+      const agentId = `agent-${i.toString().padStart(3, '0')}`;
+      
+      if (await this.canReassignAgent(agentId)) {
+        this.log(`Agent ${agentId} can be reassigned`);
+        return agentId;
+      }
+    }
+    
+    // Step 3: Look for agents with no current task but marked as working (stale state)
+    for (const [agentId, status] of Object.entries(this.kanban.agents)) {
+      if (status.status === 'working' && !status.current_task) {
+        this.warn(`Found agent ${agentId} in working state but no current task - reassigning`);
+        return agentId;
+      }
+    }
+    
+    this.error('All agent slots are occupied with active work. Use "status" command to see active agents.');
     return null;
+  }
+
+  private async canReassignAgent(agentId: string): Promise<boolean> {
+    const agentStatus = this.kanban.agents[agentId];
+    
+    // Agent doesn't exist in kanban - can use
+    if (!agentStatus) {
+      this.log(`Agent ${agentId} not in kanban - available`);
+      return true;
+    }
+    
+    // Agent is explicitly available - can use
+    if (agentStatus.status === 'available') {
+      this.log(`Agent ${agentId} marked as available`);
+      return true;
+    }
+    
+    // Agent has no current task - can reassign
+    if (!agentStatus.current_task) {
+      this.log(`Agent ${agentId} has no current task - can reassign`);
+      return true;
+    }
+    
+    // Check if worktree actually exists for working agents
+    if (agentStatus.status === 'working') {
+      const worktreePath = `./agents/${agentId}`;
+      const absolutePath = resolve(PROJECT_ROOT, worktreePath);
+      
+      try {
+        const worktrees = await git.raw(['worktree', 'list']);
+        if (!worktrees.includes(absolutePath) && !worktrees.includes(worktreePath)) {
+          this.warn(`Agent ${agentId} marked as working but no worktree exists - can reassign`);
+          return true;
+        }
+      } catch (error) {
+        this.warn(`Could not check worktrees for ${agentId}: ${error}`);
+        return false;
+      }
+    }
+    
+    return false;
   }
 
   getNextTask(): Task | null {
@@ -111,48 +164,99 @@ class AgentManager {
   }
 
   async getCurrentAgentId(): Promise<string | null> {
-    // Use WORKSPACE_DIR set by justfile, or fall back to other methods
-    const currentDir = process.env.WORKSPACE_DIR || process.env.INIT_CWD || process.env.PWD || process.cwd();
-    
-    // Method 1: Check for .agent-id file
-    const agentIdFile = join(currentDir, '.agent-id');
-    if (existsSync(agentIdFile)) {
-      return readFileSync(agentIdFile, 'utf8').trim();
+    // Step 1: Try WORKSPACE_DIR first (most reliable for justfile context)
+    const workspaceDir = process.env.WORKSPACE_DIR;
+    if (workspaceDir) {
+      const agentMatch = workspaceDir.match(/agents\/(agent-\d{3})$/);
+      if (agentMatch) {
+        const agentId = agentMatch[1];
+        // Validate that this agent workspace is properly set up
+        if (await this.validateAgentContext(agentId, workspaceDir)) {
+          return agentId;
+        }
+      }
     }
     
-    // Method 2: Extract from directory path
-    const pathMatch = currentDir.match(/agents\/(agent-\d{3})/);
-    if (pathMatch) {
-      return pathMatch[1];
-    }
-    
-    // Method 3: Check git worktree list
+    // Step 2: Validate current directory against active worktrees
+    const currentDir = process.env.INIT_CWD || process.env.PWD || process.cwd();
+    return await this.detectAgentFromWorktree(currentDir);
+  }
+
+  private async validateAgentContext(agentId: string, workspaceDir: string): Promise<boolean> {
     try {
+      // Check if workspace has proper agent files
+      const agentIdFile = join(workspaceDir, '.agent-id');
+      if (!existsSync(agentIdFile)) {
+        return false;
+      }
+      
+      // Verify agent ID matches
+      const fileAgentId = readFileSync(agentIdFile, 'utf8').trim();
+      if (fileAgentId !== agentId) {
+        return false;
+      }
+      
+      // Check that worktree actually exists in git
+      const worktrees = await git.raw(['worktree', 'list']);
+      const absolutePath = resolve(workspaceDir);
+      return worktrees.includes(absolutePath) || worktrees.includes(workspaceDir);
+      
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private async detectAgentFromWorktree(currentDir: string): Promise<string | null> {
+    try {
+      // Method 1: Extract from directory path
+      const pathMatch = currentDir.match(/agents\/(agent-\d{3})/);
+      if (pathMatch) {
+        const agentId = pathMatch[1];
+        
+        // Validate with .agent-id file if it exists
+        const agentIdFile = join(currentDir, '.agent-id');
+        if (existsSync(agentIdFile)) {
+          const fileAgentId = readFileSync(agentIdFile, 'utf8').trim();
+          if (fileAgentId === agentId) {
+            return agentId;
+          }
+        }
+        
+        // Validate against git worktrees
+        const worktrees = await git.raw(['worktree', 'list']);
+        const absolutePath = resolve(currentDir);
+        if (worktrees.includes(absolutePath) || worktrees.includes(currentDir)) {
+          return agentId;
+        }
+      }
+      
+      // Method 2: Check git worktree list for exact match
       const worktrees = await git.raw(['worktree', 'list']);
       const lines = worktrees.split('\n');
       for (const line of lines) {
-        if (line.includes(currentDir)) {
+        const absolutePath = resolve(currentDir);
+        if (line.includes(absolutePath) || line.includes(currentDir)) {
           const worktreeMatch = line.match(/agents\/(agent-\d{3})/);
           if (worktreeMatch) {
             return worktreeMatch[1];
           }
         }
       }
-    } catch (error) {
-      // Ignore git errors
-    }
-    
-    // Method 4: Check .agent/status file
-    const statusFile = join(currentDir, '.agent', 'status');
-    if (existsSync(statusFile)) {
-      const content = readFileSync(statusFile, 'utf8');
-      const match = content.match(/AGENT_ID=(.+)/);
-      if (match) {
-        return match[1].trim();
+      
+      // Method 3: Check .agent/status file as fallback
+      const statusFile = join(currentDir, '.agent', 'status');
+      if (existsSync(statusFile)) {
+        const content = readFileSync(statusFile, 'utf8');
+        const match = content.match(/AGENT_ID=(.+)/);
+        if (match) {
+          return match[1].trim();
+        }
       }
+      
+      return null;
+    } catch (error) {
+      return null;
     }
-    
-    return null;
   }
 
   private async isBranchInUseByOtherAgent(branchName: string, currentAgentId: string): Promise<boolean> {
@@ -177,6 +281,143 @@ class AgentManager {
     }
   }
 
+  private async commitUncommittedChanges(workspacePath: string, agentId: string): Promise<void> {
+    try {
+      const agentGit = simpleGit(workspacePath);
+      const status = await agentGit.status();
+      
+      if (status.files.length > 0) {
+        this.log(`Committing ${status.files.length} uncommitted changes for ${agentId}`);
+        
+        // Add all changes
+        await agentGit.add('.');
+        
+        // Create commit with task context
+        const taskInfo = await this.getTaskInfoFromWorkspace(workspacePath);
+        const commitMessage = taskInfo 
+          ? `Auto-commit before cleanup - ${taskInfo.id}: ${taskInfo.title}
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>`
+          : `Auto-commit before cleanup - ${agentId}
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>`;
+        
+        await agentGit.commit(commitMessage);
+        this.success(`Auto-committed ${status.files.length} changes for ${agentId}`);
+      } else {
+        this.log(`No uncommitted changes found for ${agentId}`);
+      }
+    } catch (error) {
+      this.warn(`Failed to commit changes for ${agentId}: ${error}`);
+      throw new Error(`Cannot cleanup agent ${agentId} - failed to preserve uncommitted changes`);
+    }
+  }
+
+  private async getBranchInfo(workspacePath: string, agentId: string): Promise<{branchName: string, taskId: string | null}> {
+    try {
+      const agentGit = simpleGit(workspacePath);
+      const branchName = (await agentGit.raw(['branch', '--show-current'])).trim();
+      
+      // Get task ID from workspace or kanban
+      const taskInfo = await this.getTaskInfoFromWorkspace(workspacePath);
+      const taskId = taskInfo?.id || this.kanban.agents[agentId]?.current_task || null;
+      
+      return { branchName, taskId };
+    } catch (error) {
+      this.warn(`Could not get branch info for ${agentId}: ${error}`);
+      return { branchName: 'unknown', taskId: null };
+    }
+  }
+
+  private async removeWorktreeSafely(worktreePath: string, absoluteWorktreePath: string, agentId: string): Promise<void> {
+    try {
+      // Try graceful removal first
+      await git.raw(['worktree', 'remove', absoluteWorktreePath]);
+      this.success(`Removed worktree ${absoluteWorktreePath}`);
+    } catch (error) {
+      this.warn(`Graceful worktree removal failed: ${error}`);
+      this.log(`Attempting force removal for ${agentId}`);
+      
+      try {
+        await git.raw(['worktree', 'remove', absoluteWorktreePath, '--force']);
+        this.success(`Force removed worktree ${absoluteWorktreePath}`);
+      } catch (forceError) {
+        throw new Error(`Failed to remove worktree ${absoluteWorktreePath}: ${forceError}`);
+      }
+    }
+  }
+
+  private async cleanupBranchSafely(branchInfo: {branchName: string, taskId: string | null}, agentId: string): Promise<void> {
+    const { branchName, taskId } = branchInfo;
+    
+    if (!branchName || branchName === 'unknown' || branchName === 'main') {
+      this.log(`Skipping branch cleanup for ${agentId} - no branch or on main`);
+      return;
+    }
+    
+    try {
+      // Check if branch is in use by other agents
+      const inUseByOther = await this.isBranchInUseByOtherAgent(branchName, agentId);
+      if (inUseByOther) {
+        this.warn(`Branch ${branchName} is in use by other agents, keeping it`);
+        return;
+      }
+      
+      // Check if branch is merged with main
+      const isMerged = await this.isBranchMerged(branchName);
+      if (!isMerged) {
+        this.warn(`Branch ${branchName} is not merged with main - keeping for safety`);
+        this.log(`To delete manually after merging: git branch -D ${branchName}`);
+        return;
+      }
+      
+      // Safe to delete - branch is merged and not in use
+      await git.raw(['branch', '-d', branchName]);
+      this.success(`Deleted merged branch ${branchName} (was owned by ${agentId})`);
+      
+    } catch (error) {
+      this.warn(`Could not cleanup branch ${branchName}: ${error}`);
+    }
+  }
+
+  private async isBranchMerged(branchName: string): Promise<boolean> {
+    try {
+      // Check if branch is merged into main
+      const mergedBranches = await git.raw(['branch', '--merged', 'main']);
+      return mergedBranches.includes(branchName) || mergedBranches.includes(`  ${branchName}`);
+    } catch (error) {
+      // If we can't check, assume not merged for safety
+      this.warn(`Could not check if branch ${branchName} is merged: ${error}`);
+      return false;
+    }
+  }
+
+  private async getTaskInfoFromWorkspace(workspacePath: string): Promise<{id: string, title: string} | null> {
+    try {
+      const taskFile = join(workspacePath, 'TASK.md');
+      if (!existsSync(taskFile)) {
+        return null;
+      }
+      
+      const taskContent = readFileSync(taskFile, 'utf8');
+      const titleMatch = taskContent.match(/# Task: (.+)/);
+      const taskIdMatch = taskContent.match(/\*\*Task ID:\*\* (.+)/);
+      
+      if (taskIdMatch) {
+        return {
+          id: taskIdMatch[1].trim(),
+          title: titleMatch?.[1]?.trim() || 'Unknown Task'
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   private updateAgentStatus(agentId: string, taskId: string, status: 'working' | 'available' = 'working'): void {
     if (!this.kanban.agents[agentId]) {
       this.kanban.agents[agentId] = {
@@ -187,14 +428,18 @@ class AgentManager {
       };
     }
 
-    this.kanban.agents[agentId] = {
+    const updatedStatus = {
       status,
       current_task: status === 'working' ? taskId : null,
       worktree: status === 'working' ? `./agents/${agentId}` : null,
       last_active: new Date().toISOString()
     };
-
+    
+    this.kanban.agents[agentId] = updatedStatus;
     this.saveKanban();
+    
+    // Log the status change for debugging
+    this.log(`Agent ${agentId} status updated: ${status}${taskId ? ` (task: ${taskId})` : ''}`);
   }
 
   private moveTaskToInProgress(task: Task, agentId: string): void {
@@ -353,6 +598,7 @@ class AgentManager {
 
   private createDynamicJustfile(agentDir: string, agentId: string): void {
     const justfileContent = `# Dynamic Agent Workspace Commands
+# ⚠️  WORKSPACE ISOLATION: Only run agent-specific commands from this directory
 
 # Resume work with dynamic task assignment
 work:
@@ -367,10 +613,6 @@ my-id:
 status:
     npm --prefix ../.. run agent:dev status
 
-# Get assigned to next available task (if current task is complete)
-assign:
-    npm --prefix ../.. run agent:dev start
-
 # Mark current task as complete and move to review
 complete:
     @echo "🎉 Marking task as complete..."
@@ -380,23 +622,149 @@ complete:
 done:
     @just complete
 
+# Clean up this agent workspace (self-cleanup)
+cleanup:
+    @echo "🧹 Cleaning up ${agentId} workspace..."
+    @echo "⚠️  This will remove your workspace and commit any unsaved changes"
+    @echo "Current directory: {{justfile_directory()}}"
+    npm --prefix ../.. run agent:dev cleanup
+
 # Request reassignment to different task
 reassign:
     @echo "🔄 Requesting task reassignment..."
     @echo "TODO: Implement task reassignment workflow"
 
+# GUARDIAN COMMANDS - Prevent dangerous project-level commands in agent workspace
+# These commands could corrupt your workspace if run from here
+
+# Guardian: Block agent assignment from agent workspace
+agent1:
+    @echo "❌ DANGEROUS: 'just agent1' should NOT be run from agent workspace!"
+    @echo ""
+    @echo "🚨 WORKSPACE ISOLATION VIOLATION:"
+    @echo "   Running agent assignment from within an agent workspace can corrupt your environment"
+    @echo ""
+    @echo "💡 CORRECT USAGE:"
+    @echo "   1. Navigate to project root:"
+    @echo "      cd ../.."
+    @echo "   2. Then run agent commands:"
+    @echo "      just agent1"
+    @echo ""
+    @echo "🛡️  PROTECTION: This command is blocked to prevent workspace corruption"
+    @exit 1
+
+agent2:
+    @echo "❌ DANGEROUS: 'just agent2' should NOT be run from agent workspace!"
+    @echo ""
+    @echo "🚨 WORKSPACE ISOLATION VIOLATION:"
+    @echo "   Running agent assignment from within an agent workspace can corrupt your environment"
+    @echo ""
+    @echo "💡 CORRECT USAGE:"
+    @echo "   1. Navigate to project root:"
+    @echo "      cd ../.."
+    @echo "   2. Then run agent commands:"
+    @echo "      just agent2"
+    @echo ""
+    @echo "🛡️  PROTECTION: This command is blocked to prevent workspace corruption"
+    @exit 1
+
+agent3:
+    @echo "❌ DANGEROUS: 'just agent3' should NOT be run from agent workspace!"
+    @echo ""
+    @echo "🚨 WORKSPACE ISOLATION VIOLATION:"
+    @echo "   Running agent assignment from within an agent workspace can corrupt your environment"
+    @echo ""
+    @echo "💡 CORRECT USAGE:"
+    @echo "   1. Navigate to project root:"
+    @echo "      cd ../.."
+    @echo "   2. Then run agent commands:"
+    @echo "      just agent3"
+    @echo ""
+    @echo "🛡️  PROTECTION: This command is blocked to prevent workspace corruption"
+    @exit 1
+
+# Guardian: Block reset from agent workspace
+reset:
+    @echo "❌ CRITICAL: 'just reset' should NOT be run from agent workspace!"
+    @echo ""
+    @echo "🚨 CRITICAL SAFETY VIOLATION:"
+    @echo "   This command resets ALL agents and would destroy your current workspace"
+    @echo ""
+    @echo "💡 CORRECT USAGE:"
+    @echo "   1. Navigate to project root:"
+    @echo "      cd ../.."
+    @echo "   2. Complete your work first:"
+    @echo "      just complete  (from your agent workspace)"
+    @echo "   3. Then run reset from project root:"
+    @echo "      just reset"
+    @echo ""
+    @echo "🛡️  PROTECTION: This command is blocked to prevent accidental workspace destruction"
+    @exit 1
+
+# Guardian: Block start-all from agent workspace
+start-all:
+    @echo "❌ DANGEROUS: 'just start-all' should NOT be run from agent workspace!"
+    @echo ""
+    @echo "🚨 WORKSPACE ISOLATION VIOLATION:"
+    @echo "   This command manages all agents and should only run from project root"
+    @echo ""
+    @echo "💡 CORRECT USAGE:"
+    @echo "   1. Navigate to project root:"
+    @echo "      cd ../.."
+    @echo "   2. Then run:"
+    @echo "      just start-all"
+    @echo ""
+    @echo "🛡️  PROTECTION: This command is blocked to prevent workspace conflicts"
+    @exit 1
+
+# Guardian: Block assign from agent workspace (use project-level assignment)
+assign:
+    @echo "❌ WARNING: 'just assign' should be used carefully from agent workspace"
+    @echo ""
+    @echo "⚠️  POTENTIAL ISSUE:"
+    @echo "   You're already in an agent workspace (${agentId})"
+    @echo "   Assignment might conflict with your current work"
+    @echo ""
+    @echo "💡 RECOMMENDED ACTIONS:"
+    @echo "   1. Complete your current task first:"
+    @echo "      just complete"
+    @echo "   2. Navigate to project root for new assignment:"
+    @echo "      cd ../.."
+    @echo "      just agent1  # or agent2, agent3"
+    @echo ""
+    @echo "🔄 Or continue with current task:"
+    @echo "   just work"
+    @echo ""
+    @read -p "Are you sure you want to proceed with assignment? (yes/no): " confirm; \\
+    if [ "$$confirm" = "yes" ]; then \\
+        echo "Proceeding with caution..."; \\
+        npm --prefix ../.. run agent:dev start; \\
+    else \\
+        echo "❌ Assignment cancelled - wise choice!"; \\
+    fi
+
 # Show this help and current dynamic assignment
 help:
-    @echo "Dynamic Agent Commands:"
+    @echo "🤖 Agent Workspace Commands (${agentId}):"
+    @echo ""
+    @echo "Work Commands:"
     @echo "  just work      🚀 Start work session (shows current assignment)"
-    @echo "  just my-id     🆔 Show agent identity"
-    @echo "  just status    📊 Show kanban board status"
-    @echo "  just assign    📝 Get assigned to next task"
     @echo "  just complete  ✅ Mark current task complete"
     @echo "  just done      ✅ Mark current task complete (alias)"
+    @echo "  just cleanup   🧹 Clean up this agent workspace"
+    @echo ""
+    @echo "Info Commands:"
+    @echo "  just my-id     🆔 Show agent identity"
+    @echo "  just status    📊 Show kanban board status"
     @echo "  just reassign  🔄 Request different task"
     @echo ""
-    @echo "Your role and scope are determined dynamically by kanban.yaml!"
+    @echo "🛡️  Guardian Commands (BLOCKED for safety):"
+    @echo "  just agent1/2/3  ❌ Blocked - run from project root"
+    @echo "  just reset       ❌ Blocked - run from project root"
+    @echo "  just start-all   ❌ Blocked - run from project root"
+    @echo ""
+    @echo "🎯 Your role and scope are determined dynamically by kanban.yaml!"
+    @echo "⚠️  WORKSPACE ISOLATION: Stay within your agent boundary for safety"
 
 # Default shows current assignment
 default:
@@ -444,6 +812,9 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
   }
 
   async startAgent(): Promise<void> {
+    // CRITICAL: Validate this command runs from project root only
+    WorkspaceValidator.validateCommand('project', 'start');
+    
     this.log('Starting new agent...');
     
     // Get next available agent
@@ -520,10 +891,25 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
   }
 
   async cleanupAgent(agentId?: string): Promise<void> {
+    // CRITICAL: Validate cleanup location and detect dangerous cross-workspace scenarios
+    const context = WorkspaceValidator.detectExecutionContext();
+    
     if (!agentId) {
-      agentId = await this.getCurrentAgentId();
-      if (!agentId) {
+      // If no agent ID specified, validate we're in an agent workspace for self-cleanup
+      WorkspaceValidator.validateCommand('agent', 'cleanup');
+      const currentAgentId = await this.getCurrentAgentId();
+      if (!currentAgentId) {
         this.error('Could not determine agent ID. Please specify agent ID.');
+        return;
+      }
+      agentId = currentAgentId;
+    } else {
+      // If agent ID specified, this should run from project root
+      if (context.type === 'agent' && context.agentId !== agentId) {
+        this.error(`DANGER: Attempting to cleanup ${agentId} from ${context.agentId} workspace!`);
+        this.error('This could corrupt your workspace. Navigate to project root first:');
+        this.error('  cd ../..');
+        this.error(`  npm run agent:dev cleanup ${agentId}`);
         return;
       }
     }
@@ -534,38 +920,33 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     this.log(`Cleaning up ${agentId}`);
     
     try {
-      // Get the branch this agent was using before cleanup
-      let agentBranch = null;
-      const agentStatus = this.kanban.agents[agentId];
-      if (agentStatus?.current_task) {
-        agentBranch = `task/${agentStatus.current_task}`;
+      // Step 1: Validate workspace exists
+      const worktrees = await git.raw(['worktree', 'list']);
+      if (!worktrees.includes(absoluteWorktreePath) && !worktrees.includes(worktreePath)) {
+        this.warn(`No worktree found for ${agentId}, updating status only`);
+        this.updateAgentStatus(agentId, '', 'available');
+        return;
       }
       
-      // Update kanban board
+      // Step 2: Commit any uncommitted changes
+      await this.commitUncommittedChanges(absoluteWorktreePath, agentId);
+      
+      // Step 3: Get branch info before cleanup
+      const branchInfo = await this.getBranchInfo(absoluteWorktreePath, agentId);
+      
+      // Step 4: Remove worktree safely
+      await this.removeWorktreeSafely(worktreePath, absoluteWorktreePath, agentId);
+      
+      // Step 5: Handle branch cleanup with safety checks
+      await this.cleanupBranchSafely(branchInfo, agentId);
+      
+      // Step 6: Update kanban state only after successful cleanup
       this.updateAgentStatus(agentId, '', 'available');
       
-      // Remove worktree
-      const worktrees = await git.raw(['worktree', 'list']);
-      if (worktrees.includes(absoluteWorktreePath)) {
-        await git.raw(['worktree', 'remove', absoluteWorktreePath, '--force']);
-        this.success(`Removed worktree ${absoluteWorktreePath}`);
-        
-        // Only delete the branch if it's not in use by other agents
-        if (agentBranch && !(await this.isBranchInUseByOtherAgent(agentBranch, agentId))) {
-          try {
-            await git.raw(['branch', '-D', agentBranch]);
-            this.success(`Deleted branch ${agentBranch} (was owned by ${agentId})`);
-          } catch (error) {
-            this.warn(`Could not delete branch ${agentBranch}: ${error}`);
-          }
-        } else if (agentBranch) {
-          this.warn(`Branch ${agentBranch} still in use by other agents, keeping it`);
-        }
-      }
-      
-      this.success(`Agent ${agentId} cleaned up`);
+      this.success(`Agent ${agentId} cleaned up safely`);
     } catch (error) {
-      this.error(`Failed to cleanup agent: ${error}`);
+      this.error(`Failed to cleanup agent ${agentId}: ${error}`);
+      this.warn(`Agent ${agentId} may be in inconsistent state - manual review required`);
     }
   }
 
@@ -1026,8 +1407,8 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     const inProgressTasks = this.kanban.tasks.in_progress;
     this.kanban.tasks.backlog.unshift(...inProgressTasks.map(task => ({
       ...task,
-      assignee: null,
-      started: undefined
+      assignee: null as string | null,
+      started: null as string | null
     })));
     
     // Clear in_progress
@@ -1047,20 +1428,20 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     this.success('Kanban board reset - all tasks moved to backlog and agents set to available');
   }
 
-  async addTask(title: string, priority: string = 'normal', estimatedHours: number = 8): Promise<void> {
+  async addTask(title: string, priority: 'critical' | 'high' | 'normal' | 'low' = 'normal', estimatedHours: number = 8): Promise<void> {
     const taskId = `TASK-${Date.now().toString().slice(-6)}`;
     
     const newTask: Task = {
       id: taskId,
       title,
-      priority,
+      priority: priority as 'critical' | 'high' | 'normal' | 'low',
       estimated_hours: estimatedHours,
       description: `Add task description here`,
       requirements: ['Define specific requirements'],
       files: ['Specify relevant files'],
       dependencies: [],
       labels: ['auto-generated'],
-      assignee: null
+      assignee: null as string | null
     };
     
     this.kanban.tasks.backlog.push(newTask);
@@ -1071,6 +1452,9 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
   }
 
   async completeCurrentTask(): Promise<void> {
+    // CRITICAL: Validate this is being run from agent workspace
+    WorkspaceValidator.validateCommand('agent', 'complete-task');
+    
     const agentId = await this.getCurrentAgentId();
     if (!agentId) {
       this.error('Could not determine agent ID');
@@ -1118,12 +1502,7 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
     console.log(chalk.green(`✅ Task ${taskId} complete! Ready for cleanup and next assignment.`));
   }
 
-  async setTaskPriority(taskId: string, newPriority: string): Promise<void> {
-    const validPriorities = ['critical', 'high', 'normal', 'low'];
-    if (!validPriorities.includes(newPriority)) {
-      this.error(`Invalid priority: ${newPriority}. Valid priorities: ${validPriorities.join(', ')}`);
-      return;
-    }
+  async setTaskPriority(taskId: string, newPriority: 'critical' | 'high' | 'normal' | 'low'): Promise<void> {
 
     // Find task in any status
     const allStatuses = ['backlog', 'todo', 'in_progress', 'review'] as const;
@@ -1135,6 +1514,90 @@ Auto-generated from kanban.yaml on ${new Date().toISOString()}
         this.kanban.tasks[status][taskIndex].priority = newPriority;
         taskFound = true;
         this.success(`Updated task ${taskId} priority to ${newPriority} in ${status}`);
+        break;
+      }
+    }
+
+    if (!taskFound) {
+      this.error(`Task ${taskId} not found in any status`);
+      return;
+    }
+
+    this.saveKanban();
+  }
+
+  async moveTaskToBacklog(taskId: string): Promise<void> {
+    console.log(chalk.blue(`📋 Moving task ${taskId} to backlog...`));
+
+    // Find task in any status except backlog and done
+    const searchStatuses = ['todo', 'in_progress', 'review'] as const;
+    let taskFound: Task | null = null;
+    let sourceStatus: string | null = null;
+
+    for (const status of searchStatuses) {
+      const taskIndex = this.kanban.tasks[status].findIndex(t => t.id === taskId);
+      if (taskIndex !== -1) {
+        taskFound = this.kanban.tasks[status][taskIndex];
+        sourceStatus = status;
+        // Remove from current status
+        this.kanban.tasks[status].splice(taskIndex, 1);
+        break;
+      }
+    }
+
+    if (!taskFound) {
+      // Check if already in backlog
+      const backlogTask = this.kanban.tasks.backlog.find(t => t.id === taskId);
+      if (backlogTask) {
+        this.warn(`Task ${taskId} is already in backlog`);
+        return;
+      }
+      this.error(`Task ${taskId} not found in any moveable status (todo, in_progress, review)`);
+      return;
+    }
+
+    // Reset task state for backlog
+    const resetTask: Task = {
+      ...taskFound,
+      assignee: null as string | null,
+      started: null as string | null
+    };
+
+    // Add to backlog
+    this.kanban.tasks.backlog.push(resetTask);
+    this.success(`Moved task ${taskId} from ${sourceStatus} to backlog`);
+    this.saveKanban();
+  }
+
+  async unassignTask(taskId: string): Promise<void> {
+    console.log(chalk.blue(`🔄 Unassigning task ${taskId}...`));
+
+    // Find task in any status
+    const allStatuses = ['backlog', 'todo', 'in_progress', 'review'] as const;
+    let taskFound = false;
+
+    for (const status of allStatuses) {
+      const taskIndex = this.kanban.tasks[status].findIndex(t => t.id === taskId);
+      if (taskIndex !== -1) {
+        const task = this.kanban.tasks[status][taskIndex];
+        const oldAssignee = task.assignee;
+        
+        // Unassign the task
+        task.assignee = null as string | null;
+        task.started = null as string | null;
+
+        // If task is not in backlog, move it there
+        if (status !== 'backlog') {
+          // Remove from current status
+          this.kanban.tasks[status].splice(taskIndex, 1);
+          // Add to backlog
+          this.kanban.tasks.backlog.push(task);
+          this.success(`Unassigned task ${taskId} from ${oldAssignee} and moved from ${status} to backlog`);
+        } else {
+          this.success(`Unassigned task ${taskId} from ${oldAssignee} (remained in backlog)`);
+        }
+
+        taskFound = true;
         break;
       }
     }
@@ -1253,6 +1716,22 @@ program
   .argument('<priority>', 'New priority (critical/high/normal/low)')
   .action(async (taskId, priority) => {
     await manager.setTaskPriority(taskId, priority);
+  });
+
+program
+  .command('move-to-backlog')
+  .description('Move a task back to backlog')
+  .argument('<task-id>', 'Task ID to move to backlog')
+  .action(async (taskId) => {
+    await manager.moveTaskToBacklog(taskId);
+  });
+
+program
+  .command('unassign')
+  .description('Unassign a task and move it to backlog')
+  .argument('<task-id>', 'Task ID to unassign')
+  .action(async (taskId) => {
+    await manager.unassignTask(taskId);
   });
 
 program.parse();
