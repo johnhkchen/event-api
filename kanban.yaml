@@ -4,132 +4,31 @@ metadata:
   created: '2025-01-12'
   last_updated: '2025-08-14'
   task_summary:
-    total_tasks: 58
-    backlog: 26
+    total_tasks: 65
+    backlog: 33
     todo: 0
-    in_progress: 2
-    review: 0
-    done: 33
-    completion_percentage: 64%
+    in_progress: 3
+    review: 4
+    done: 25
+    completion_percentage: 57%
 agents:
   agent-001:
     status: working
-    current_task: REPO-SYNC-001
+    current_task: REVIEW-PROCESSING-001
     worktree: ./agents/agent-001
-    last_active: '2025-08-14T08:37:36.169Z'
+    last_active: '2025-08-14T09:19:57.544Z'
   agent-002:
     status: working
-    current_task: DB-FEAT-006
+    current_task: REPO-SYNC-002
     worktree: ./agents/agent-002
-    last_active: '2025-08-14T08:28:30.870Z'
+    last_active: '2025-08-14T09:19:26.008Z'
   agent-003:
-    status: working
-    current_task: HONO-FEAT-006
-    worktree: ./agents/agent-003
-    last_active: '2025-08-14T08:31:11.369Z'
+    status: available
+    current_task: null
+    worktree: null
+    last_active: '2025-08-14T09:21:07.959Z'
 tasks:
   backlog:
-    - id: WORKFLOW-CRITICAL-001
-      title: Critical Workflow System Enhancement - Prevent Agent Confusion and SOP Violations
-      priority: critical
-      estimated_hours: 16
-      description: >-
-        Comprehensive overhaul of workflow system to eliminate agent confusion about command locations and prevent
-        Standard Operating Procedure violations. Critical fixes to prevent agents from working outside their assigned
-        worktrees and causing workflow breakdowns.
-      requirements:
-        - >-
-          Command Guardrails Implementation: Add reminder commands (just complete, just done) in base directory justfile
-          that redirect agents to their proper agent directories with clear instructions
-        - >-
-          Base Directory Protection: Implement safeguards in base justfile to prevent agents from running workflow
-          commands outside their designated worktrees
-        - >-
-          Comprehensive Workflow Audit: Review entire workflow system (justfile, scripts/, documentation) to identify
-          and fix similar missing guardrails and confusion points
-        - >-
-          Agent Workspace Enforcement: Strengthen isolation system to prevent agents from deleting each other's
-          branches, overwriting work, or accessing other agents' worktrees
-        - >-
-          SOP Enhancement: Update Standard Operating Procedures with clearer workspace rules, validation steps, and
-          early warning systems for workflow violations
-        - >-
-          Command Location Validation: Add checks in agent-work.ts and agent-manager.ts to validate commands are run
-          from correct locations with helpful error messages
-        - >-
-          Workflow Documentation Update: Update all workflow documentation to clarify proper command usage and agent
-          workspace boundaries
-        - >-
-          Testing and Validation: Test all workflow scenarios to ensure agents cannot accidentally violate workspace
-          isolation or delete other agents' work
-      files:
-        - /home/jchen/repos/event-api/justfile (add guardian commands)
-        - /home/jchen/repos/event-api/scripts/agent-work.ts (add location validation)
-        - /home/jchen/repos/event-api/scripts/agent-manager.ts (enhance workspace isolation)
-        - /home/jchen/repos/event-api/agents/*/justfile (verify consistency)
-        - /home/jchen/repos/event-api/CLAUDE.md (update workflow documentation)
-        - /home/jchen/repos/event-api/docs/ (update workflow guides)
-      dependencies: []
-      labels:
-        - critical
-        - workflow
-        - agent-isolation
-        - sop-enforcement
-        - guardrails
-        - P0
-      assignee: null
-      blocking_rationale: >-
-        Agent workspace confusion is causing critical workflow violations including command location errors, potential
-        data loss from agents deleting each other's branches, and Standard Operating Procedure breakdowns. Without
-        proper guardrails, agents risk overwriting work, working outside designated areas, and causing project delays.
-        This is blocking efficient concurrent development and threatens project stability.
-      validation_status: >-
-        CRITICAL WORKFLOW VIOLATION RISK - Agents getting confused about where to run just complete/done commands,
-        leading to SOP violations and potential workspace contamination. Immediate implementation of guardrails required
-        to prevent data loss and maintain development workflow integrity.
-    - id: HONO-FEAT-008
-      title: Authentication & Rate Limiting
-      priority: normal
-      estimated_hours: 24
-      description: Implement API authentication, rate limiting, and security middleware
-      requirements:
-        - API key authentication system
-        - Rate limiting by IP and API key
-        - CORS configuration
-        - Request logging middleware
-        - Input validation and sanitization
-      files:
-        - src/middleware/
-        - src/auth/
-      dependencies:
-        - HONO-FEAT-001
-      labels:
-        - security
-        - authentication
-        - P2
-      assignee: null
-    - id: ELIXIR-FEAT-006
-      title: Graph Relationship Builder
-      priority: normal
-      estimated_hours: 36
-      description: Implement graph relationship building using PostgreSQL AGE extension
-      requirements:
-        - Graph node creation for events, speakers, companies
-        - Relationship edge creation with weights
-        - Graph traversal queries
-        - Speaker network analysis
-        - Company event relationships
-      files:
-        - lib/event_api/graph/
-        - lib/event_api/relationships/
-      dependencies:
-        - ELIXIR-FEAT-002
-        - DB-FEAT-005
-      labels:
-        - graph
-        - relationships
-        - P2
-      assignee: null
     - id: ELIXIR-FEAT-007
       title: Recommendation Engine
       priority: normal
@@ -413,103 +312,126 @@ tasks:
       assignee: null
   todo: []
   in_progress:
-    - id: DB-FEAT-006
-      title: Monitoring & Observability
-      priority: normal
-      estimated_hours: 18
-      description: Set up database monitoring, slow query logging, and observability
-      requirements:
-        - Slow query logging
-        - Connection monitoring
-        - Disk usage alerts
-        - Performance metrics collection
-        - Log aggregation setup
-      files:
-        - monitoring/
-        - postgres/monitoring/
-      dependencies:
-        - DB-FEAT-001
-      labels:
-        - monitoring
-        - observability
-        - P2
-      assignee: agent-002
-      started: '2025-08-14T08:28:30.877Z'
-    - id: HONO-FEAT-006
-      title: Batch Operations API
-      priority: normal
-      estimated_hours: 24
-      description: Implement batch endpoints for bulk scraping and processing operations
-      requirements:
-        - POST /api/events/batch/scrape for multiple URLs
-        - POST /api/events/batch/process for reprocessing
-        - Bulk validation and error handling
-        - Progress tracking for long operations
-        - Rate limiting for batch operations
-      files:
-        - src/api/batch/
-        - src/lib/batch/
-      dependencies:
-        - HONO-FEAT-003
-        - HONO-FEAT-004
-      labels:
-        - batch
-        - bulk-operations
-        - P2
-      assignee: agent-003
-      started: '2025-08-14T08:31:11.377Z'
-    - id: REPO-SYNC-001
-      title: Critical Repository Synchronization and Branch Cleanup
+    - id: REPO-SYNC-002
+      title: Critical Repository Synchronization and Uncommitted Changes Management
       priority: critical
-      estimated_hours: 6
-      description: >
-        Comprehensive repository synchronization and cleanup task to push all merged development work to remote and
-        safely delete local task branches. Main branch contains 8 commits ahead of origin/main with all development work
-        from 16 task branches that have been merged locally.
+      estimated_hours: 8
+      description: >-
+        Comprehensive repository state management to handle current uncommitted modifications and ensure clean
+        development workflow. Git status shows 5 modified files (justfile, kanban.yaml, scripts/) that need proper
+        staging and commit management before any branch operations.
       requirements:
-        - >
-          Repository Synchronization: Push main branch to origin/main to sync all 8 commits containing merged
-          development work from task branches
-        - >
-          Commit Current Changes: Stage and commit current kanban.yaml modifications with proper commit message
-          including task addition
-        - >
-          Branch Safety Verification: Verify all 16 local task branches have been fully merged into main with no
-          unmerged commits or unique work
-        - >
-          Safe Branch Deletion: Delete local task branches after verifying they are fully merged and contain no unique
-          commits
-        - |
-          Worktree Cleanup: Remove any git worktree references associated with deleted branches
-        - >
-          Repository Health Check: Verify git status is clean, no orphaned references, and repository is in optimal
-          state
-        - |
-          Remote Verification: Confirm remote repository matches local main branch and contains all development work
-        - Document cleanup process with list of deleted branches and verification steps completed
+        - Stage and commit current modifications to justfile with workflow fixes
+        - Stage and commit kanban.yaml updates with new task additions and status changes
+        - Stage and commit scripts/ directory changes (agent-manager.ts, agent-work.ts, types.ts)
+        - Verify all current modifications are committed cleanly without loss
+        - Validate git status is clean after commit operations
+        - Check repository integrity and confirm no orphaned references
+        - Document commit messages following established repository patterns
+        - Prepare repository for safe branch operations and workflow continuation
       files:
+        - /home/jchen/repos/event-api/justfile
+        - /home/jchen/repos/event-api/kanban.yaml
+        - /home/jchen/repos/event-api/scripts/agent-manager.ts
+        - /home/jchen/repos/event-api/scripts/agent-work.ts
+        - /home/jchen/repos/event-api/scripts/types.ts
         - /home/jchen/repos/event-api/.git/ (git operations)
-        - /home/jchen/repos/event-api/kanban.yaml (commit current modifications)
-        - All 16 local task branches for verification and deletion
-        - Git worktree configuration and references
       dependencies: []
       labels:
         - critical
         - repository-management
-        - synchronization
-        - branch-cleanup
+        - commit-staging
+        - workflow-fixes
+        - P0
+      assignee: agent-002
+      blocking_rationale: >-
+        Repository contains 5 uncommitted modified files including critical workflow scripts and kanban updates. These
+        modifications must be properly staged and committed before any branch operations or task assignments can proceed
+        safely. Uncommitted changes create risk of work loss and prevent clean agent workflow execution. Critical path
+        blocker for all concurrent development streams.
+      validation_status: >-
+        CRITICAL STAGING REQUIRED - Modified files (justfile, kanban.yaml, agent scripts) contain workflow fixes and
+        task updates that must be committed immediately. Clean repository state essential for agent workflow system and
+        task assignment procedures.
+      started: '2025-08-14T09:19:26.018Z'
+    - id: REVIEW-PROCESSING-001
+      title: Comprehensive Review Section Task Validation and Disposition
+      priority: critical
+      estimated_hours: 20
+      description: >-
+        Systematic processing and validation of all tasks currently in review section to determine accurate completion
+        status and apply proper task disposition. Current review section shows 4 tasks marked as completed that require
+        comprehensive file-level validation and functional testing to establish ground truth implementation status.
+      requirements:
+        - >-
+          Validate CRITICAL-REVIEW-PROCESSOR-003: Verify if systematic review processing was actually completed and
+          review tasks were properly processed with accurate validation
+        - >-
+          Validate HONO-FEAT-006 (Batch Operations API): Check for actual implementation of batch endpoints at
+          src/api/batch/ and functional batch operations with progress tracking
+        - >-
+          Validate REPO-SYNC-001: Verify if repository synchronization task was actually completed, check for remote
+          push status and branch cleanup completion
+        - >-
+          Validate DB-FEAT-006 (Monitoring & Observability): Confirm database monitoring implementation exists at
+          monitoring/ and postgres/monitoring/ with functional metrics collection
+        - >-
+          Validate HONO-FEAT-008 (Authentication & Rate Limiting): Check for authentication system implementation in
+          src/middleware/ and src/auth/ with working API key validation
+        - >-
+          Validate ELIXIR-FEAT-006 (Graph Relationship Builder): Verify graph implementation at lib/event_api/graph/ and
+          lib/event_api/relationships/ with functional AGE extension usage
+        - >-
+          Validate WORKFLOW-FIX-002: Check if agent-work.ts script was properly implemented with workspace management
+          functionality
+        - >-
+          Validate WORKFLOW-CRITICAL-001: Verify workflow system enhancements were completed with proper guardrails and
+          agent isolation enforcement  
+        - >-
+          Validate WORKFLOW-FIX-003: Check if agent assignment logic fixes were implemented with proper cleanup
+          workflows and validation
+        - Apply rigorous validation criteria - examine ALL specified file paths for actual implementation depth
+        - Test functional integration where applicable - API endpoint responses, database connections, script execution
+        - Move genuinely complete tasks to done section with proper validation_notes following established format
+        - Create new backlog tasks for identified remaining work with specific implementation requirements
+        - Split partially complete tasks - completed portions to done, remaining work to new targeted backlog items
+        - Update task metadata with accurate completion timestamps and validation status
+      files:
+        - /home/jchen/repos/event-api/kanban.yaml
+        - /home/jchen/repos/event-api/services/hono-api/src/api/batch/
+        - /home/jchen/repos/event-api/services/hono-api/src/lib/batch/
+        - /home/jchen/repos/event-api/monitoring/
+        - /home/jchen/repos/event-api/postgres/monitoring/
+        - /home/jchen/repos/event-api/services/hono-api/src/middleware/
+        - /home/jchen/repos/event-api/services/hono-api/src/auth/
+        - /home/jchen/repos/event-api/services/elixir_service/lib/event_api/graph/
+        - /home/jchen/repos/event-api/services/elixir_service/lib/event_api/relationships/
+        - /home/jchen/repos/event-api/scripts/agent-work.ts
+        - /home/jchen/repos/event-api/scripts/agent-manager.ts
+        - /home/jchen/repos/event-api/justfile
+        - /home/jchen/repos/event-api/agents/*/justfile
+      dependencies:
+        - REPO-SYNC-002
+      labels:
+        - critical
+        - review-processing
+        - validation
+        - task-disposition
+        - completion-audit
         - P0
       assignee: agent-001
-      blocking_rationale: >
-        Repository contains 8 commits ahead of origin/main with merged development work from 16 task branches. Local
-        repository is out of sync with remote, creating risk of work loss and collaboration issues. 16 stale local
-        branches create repository clutter and potential confusion for development workflow. Must synchronize and clean
-        up repository state before continuing development work.
-      validation_status: >
-        CRITICAL SYNC REQUIRED - Main branch contains merged work from 16 task branches but is 8 commits ahead of
-        remote. Repository cleanup essential to maintain clean development workflow and prevent work loss or
-        collaboration conflicts.
-      started: '2025-08-14T08:37:36.176Z'
+      blocking_rationale: >-
+        Review section contains 4 tasks marked as completed with timestamps indicating recent completion, but requires
+        comprehensive validation to distinguish between actual implementations versus stub/placeholder code. Inaccurate
+        task status prevents proper project completion assessment, blocks resource allocation decisions, and creates
+        risk of incomplete features being considered done. This systematic validation is essential before project can be
+        considered production-ready or additional development streams can be planned.
+      validation_status: >-
+        CRITICAL VALIDATION REQUIRED - Review section requires comprehensive file-level audit to establish ground truth
+        implementation status. Current completion timestamps and validation_status indicators suggest mixed
+        implementation depth requiring thorough examination of actual file contents and functional testing to prevent
+        false completion status from blocking development progress.
+      started: '2025-08-14T09:19:57.555Z'
   review:
     - id: CRITICAL-REVIEW-PROCESSOR-003
       title: Systematic Review Section Task Validation and Processing
@@ -575,6 +497,362 @@ tasks:
         functional  testing to establish ground truth.
       started: '2025-08-14T08:26:05.961Z'
       completed: '2025-08-14T08:36:41.334Z'
+    - id: HONO-FEAT-006
+      title: Batch Operations API
+      priority: normal
+      estimated_hours: 24
+      description: Implement batch endpoints for bulk scraping and processing operations
+      requirements:
+        - POST /api/events/batch/scrape for multiple URLs
+        - POST /api/events/batch/process for reprocessing
+        - Bulk validation and error handling
+        - Progress tracking for long operations
+        - Rate limiting for batch operations
+      files:
+        - src/api/batch/
+        - src/lib/batch/
+      dependencies:
+        - HONO-FEAT-003
+        - HONO-FEAT-004
+      labels:
+        - batch
+        - bulk-operations
+        - P2
+      assignee: agent-003
+      started: '2025-08-14T08:31:11.377Z'
+      completed: '2025-08-14T08:41:58.545Z'
+    - id: REPO-SYNC-001
+      title: Critical Repository Synchronization and Branch Cleanup
+      priority: critical
+      estimated_hours: 6
+      description: >
+        Comprehensive repository synchronization and cleanup task to push all merged development work to remote and
+        safely delete local task branches. Main branch contains 8 commits ahead of origin/main with all development work
+        from 16 task branches that have been merged locally.
+      requirements:
+        - >
+          Repository Synchronization: Push main branch to origin/main to sync all 8 commits containing merged
+          development work from task branches
+        - >
+          Commit Current Changes: Stage and commit current kanban.yaml modifications with proper commit message
+          including task addition
+        - >
+          Branch Safety Verification: Verify all 16 local task branches have been fully merged into main with no
+          unmerged commits or unique work
+        - >
+          Safe Branch Deletion: Delete local task branches after verifying they are fully merged and contain no unique
+          commits
+        - |
+          Worktree Cleanup: Remove any git worktree references associated with deleted branches
+        - >
+          Repository Health Check: Verify git status is clean, no orphaned references, and repository is in optimal
+          state
+        - |
+          Remote Verification: Confirm remote repository matches local main branch and contains all development work
+        - Document cleanup process with list of deleted branches and verification steps completed
+      files:
+        - /home/jchen/repos/event-api/.git/ (git operations)
+        - /home/jchen/repos/event-api/kanban.yaml (commit current modifications)
+        - All 16 local task branches for verification and deletion
+        - Git worktree configuration and references
+      dependencies: []
+      labels:
+        - critical
+        - repository-management
+        - synchronization
+        - branch-cleanup
+        - P0
+      assignee: agent-001
+      blocking_rationale: >
+        Repository contains 8 commits ahead of origin/main with merged development work from 16 task branches. Local
+        repository is out of sync with remote, creating risk of work loss and collaboration issues. 16 stale local
+        branches create repository clutter and potential confusion for development workflow. Must synchronize and clean
+        up repository state before continuing development work.
+      validation_status: >
+        CRITICAL SYNC REQUIRED - Main branch contains merged work from 16 task branches but is 8 commits ahead of
+        remote. Repository cleanup essential to maintain clean development workflow and prevent work loss or
+        collaboration conflicts.
+      started: '2025-08-14T08:37:36.176Z'
+      completed: '2025-08-14T08:42:37.971Z'
+    - id: DB-FEAT-006
+      title: Monitoring & Observability
+      priority: normal
+      estimated_hours: 18
+      description: Set up database monitoring, slow query logging, and observability
+      requirements:
+        - Slow query logging
+        - Connection monitoring
+        - Disk usage alerts
+        - Performance metrics collection
+        - Log aggregation setup
+      files:
+        - monitoring/
+        - postgres/monitoring/
+      dependencies:
+        - DB-FEAT-001
+      labels:
+        - monitoring
+        - observability
+        - P2
+      assignee: agent-002
+      started: '2025-08-14T08:28:30.877Z'
+      completed: '2025-08-14T08:47:22.935Z'
+    - id: HONO-FEAT-008
+      title: Authentication & Rate Limiting
+      priority: normal
+      estimated_hours: 24
+      description: Implement API authentication, rate limiting, and security middleware
+      requirements:
+        - API key authentication system
+        - Rate limiting by IP and API key
+        - CORS configuration
+        - Request logging middleware
+        - Input validation and sanitization
+      files:
+        - src/middleware/
+        - src/auth/
+      dependencies:
+        - HONO-FEAT-001
+      labels:
+        - security
+        - authentication
+        - P2
+      assignee: agent-002
+      started: '2025-08-14T08:48:24.395Z'
+      completed: '2025-08-14T08:55:45.922Z'
+    - id: ELIXIR-FEAT-006
+      title: Graph Relationship Builder
+      priority: normal
+      estimated_hours: 36
+      description: Implement graph relationship building using PostgreSQL AGE extension
+      requirements:
+        - Graph node creation for events, speakers, companies
+        - Relationship edge creation with weights
+        - Graph traversal queries
+        - Speaker network analysis
+        - Company event relationships
+      files:
+        - lib/event_api/graph/
+        - lib/event_api/relationships/
+      dependencies:
+        - ELIXIR-FEAT-002
+        - DB-FEAT-005
+      labels:
+        - graph
+        - relationships
+        - P2
+      assignee: agent-003
+      started: '2025-08-14T08:48:26.447Z'
+      completed: '2025-08-14T09:04:32.796Z'
+    - id: WORKFLOW-FIX-002
+      title: Create Missing Agent-Work.ts Script for Dynamic Workspace Management
+      priority: critical
+      estimated_hours: 12
+      description: >-
+        Create the missing agent-work.ts script that is referenced in dynamic justfiles but doesn't exist. This script
+        handles agent workspace initialization, task assignment display, and work session management.
+      requirements:
+        - Create scripts/agent-work.ts with proper agent identity detection
+        - Implement workspace validation and current task display functionality
+        - Add integration with agent-manager for task status updates
+        - Include proper error handling for workspace issues
+        - Add task progress tracking and status reporting
+        - Ensure proper environment variable handling (WORKSPACE_DIR)
+        - Test integration with dynamic justfiles and 'just work' command
+      files:
+        - /home/jchen/repos/event-api/scripts/agent-work.ts
+        - /home/jchen/repos/event-api/scripts/types.ts
+      dependencies:
+        - WORKFLOW-FIX-001
+      labels:
+        - critical
+        - agent-work
+        - scripts
+        - workspace
+        - P0
+      assignee: agent-002
+      started: '2025-08-14T08:59:07.864Z'
+      completed: '2025-08-14T09:05:35.913Z'
+    - id: WORKFLOW-CRITICAL-001
+      title: Critical Workflow System Enhancement - Prevent Agent Confusion and SOP Violations
+      priority: critical
+      estimated_hours: 16
+      description: >-
+        Comprehensive overhaul of workflow system to eliminate agent confusion about command locations and prevent
+        Standard Operating Procedure violations. Critical fixes to prevent agents from working outside their assigned
+        worktrees and causing workflow breakdowns.
+      requirements:
+        - >-
+          Command Guardrails Implementation: Add reminder commands (just complete, just done) in base directory justfile
+          that redirect agents to their proper agent directories with clear instructions
+        - >-
+          Base Directory Protection: Implement safeguards in base justfile to prevent agents from running workflow
+          commands outside their designated worktrees
+        - >-
+          Comprehensive Workflow Audit: Review entire workflow system (justfile, scripts/, documentation) to identify
+          and fix similar missing guardrails and confusion points
+        - >-
+          Agent Workspace Enforcement: Strengthen isolation system to prevent agents from deleting each other's
+          branches, overwriting work, or accessing other agents' worktrees
+        - >-
+          SOP Enhancement: Update Standard Operating Procedures with clearer workspace rules, validation steps, and
+          early warning systems for workflow violations
+        - >-
+          Command Location Validation: Add checks in agent-work.ts and agent-manager.ts to validate commands are run
+          from correct locations with helpful error messages
+        - >-
+          Workflow Documentation Update: Update all workflow documentation to clarify proper command usage and agent
+          workspace boundaries
+        - >-
+          Testing and Validation: Test all workflow scenarios to ensure agents cannot accidentally violate workspace
+          isolation or delete other agents' work
+      files:
+        - /home/jchen/repos/event-api/justfile (add guardian commands)
+        - /home/jchen/repos/event-api/scripts/agent-work.ts (add location validation)
+        - /home/jchen/repos/event-api/scripts/agent-manager.ts (enhance workspace isolation)
+        - /home/jchen/repos/event-api/agents/*/justfile (verify consistency)
+        - /home/jchen/repos/event-api/CLAUDE.md (update workflow documentation)
+        - /home/jchen/repos/event-api/docs/ (update workflow guides)
+      dependencies: []
+      labels:
+        - critical
+        - workflow
+        - agent-isolation
+        - sop-enforcement
+        - guardrails
+        - P0
+      assignee: agent-003
+      blocking_rationale: >-
+        Agent workspace confusion is causing critical workflow violations including command location errors, potential
+        data loss from agents deleting each other's branches, and Standard Operating Procedure breakdowns. Without
+        proper guardrails, agents risk overwriting work, working outside designated areas, and causing project delays.
+        This is blocking efficient concurrent development and threatens project stability.
+      validation_status: >-
+        CRITICAL WORKFLOW VIOLATION RISK - Agents getting confused about where to run just complete/done commands,
+        leading to SOP violations and potential workspace contamination. Immediate implementation of guardrails required
+        to prevent data loss and maintain development workflow integrity.
+      started: '2025-08-14T09:07:02.141Z'
+      completed: '2025-08-14T09:07:10.625Z'
+    - id: WORKFLOW-FIX-003
+      title: Implement Proper Agent Assignment Logic and Cleanup Workflows
+      priority: critical
+      estimated_hours: 10
+      description: >-
+        Fix agent assignment logic to prevent creation of duplicate agents and ensure proper workspace cleanup after
+        task completion. Address the core issue where 'just assign' creates new agents instead of using existing ones.
+      requirements:
+        - Fix getCurrentAgentId() logic in agent-manager.ts to properly detect agent context
+        - Ensure 'just assign' reuses existing agents instead of creating new ones
+        - Fix cleanup workflow to commit changes before worktree deletion
+        - Add validation to prevent agents from deleting each other's branches
+        - Implement proper task completion workflow with automatic cleanup guidance
+        - Add branch safety checks before deletion to prevent data loss
+        - Test assignment and cleanup workflows with all three agent slots
+      files:
+        - /home/jchen/repos/event-api/scripts/agent-manager.ts
+      dependencies:
+        - WORKFLOW-FIX-002
+      labels:
+        - critical
+        - assignment
+        - cleanup
+        - workflow
+        - P0
+      assignee: agent-001
+      started: '2025-08-14T08:59:06.337Z'
+      completed: '2025-08-14T09:09:40.858Z'
+    - id: WORKFLOW-FIX-005
+      title: Test Complete Workflow End-to-End with All Three Agents
+      priority: high
+      estimated_hours: 16
+      description: >-
+        Comprehensive end-to-end testing of the entire agent workflow system to ensure all fixes work correctly and
+        agents can operate without conflicts or confusion.
+      requirements:
+        - Test full agent lifecycle: start -> work -> complete -> cleanup for each agent
+        - Test concurrent agent operations with all three agents active simultaneously
+        - Validate assignment logic correctly distributes tasks without conflicts
+        - Test cleanup workflow properly removes worktrees and branches without affecting other agents
+        - Verify command location validation prevents and guides agents correctly
+        - Test error recovery scenarios (failed cleanup, workspace corruption, etc.)
+        - Validate workspace isolation prevents agents from interfering with each other
+        - Document complete workflow procedures and troubleshooting guide
+      files:
+        - /home/jchen/repos/event-api/docs/workflow-testing.md
+        - /home/jchen/repos/event-api/scripts/test-agent-workflow.sh
+      dependencies:
+        - WORKFLOW-FIX-001
+        - WORKFLOW-FIX-002
+        - WORKFLOW-FIX-003
+        - WORKFLOW-FIX-004
+      labels:
+        - high
+        - testing
+        - e2e
+        - validation
+        - documentation
+        - P1
+      assignee: agent-002
+      started: '2025-08-14T09:11:42.505Z'
+      completed: '2025-08-14T09:18:46.424Z'
+    - id: WORKFLOW-FIX-001
+      title: Fix Missing Justfile Commands and Agent-Manager Integration
+      priority: critical
+      estimated_hours: 8
+      description: >-
+        Fix critical gaps in justfile integration that prevent proper agent assignment and workflow execution. The main
+        justfile lacks essential commands like 'just assign' that agents need, and command delegation to agent-manager
+        is incomplete.
+      requirements:
+        - Add 'just assign' command in main justfile that properly delegates to agent-manager start command
+        - Add 'just complete' and 'just done' guardian commands that detect wrong location and redirect agents
+        - Fix justfile help text to include all available commands
+        - Ensure all npm script mappings in package.json are correctly configured
+        - Add location validation in guardian commands to prevent workspace violations
+        - Test command delegation and error handling for wrong directory usage
+      files:
+        - /home/jchen/repos/event-api/justfile
+        - /home/jchen/repos/event-api/package.json
+      dependencies: []
+      labels:
+        - critical
+        - justfile
+        - commands
+        - integration
+        - P0
+      assignee: agent-001
+      started: '2025-08-14T09:11:37.045Z'
+      completed: '2025-08-14T09:19:04.099Z'
+    - id: WORKFLOW-FIX-004
+      title: Add Guardrails to Prevent Command Location Confusion
+      priority: high
+      estimated_hours: 8
+      description: >-
+        Implement comprehensive guardrails to prevent agents from running commands in wrong locations, which leads to
+        workflow violations and potential data corruption.
+      requirements:
+        - Add location detection in all agent workspace commands
+        - Create helpful error messages when commands are run from wrong directories
+        - Add workspace validation checks in agent-manager and agent-work scripts
+        - Implement early warning system for workspace boundary violations
+        - Add command location validation with clear guidance for proper usage
+        - Create workspace isolation enforcement to prevent cross-contamination
+        - Update all dynamic justfiles with consistent validation logic
+      files:
+        - /home/jchen/repos/event-api/scripts/agent-manager.ts
+        - /home/jchen/repos/event-api/scripts/agent-work.ts
+        - /home/jchen/repos/event-api/agents/*/justfile (template)
+      dependencies:
+        - WORKFLOW-FIX-003
+      labels:
+        - high
+        - guardrails
+        - validation
+        - isolation
+        - P1
+      assignee: agent-003
+      started: '2025-08-14T09:11:46.017Z'
+      completed: '2025-08-14T09:21:01.103Z'
   done:
     - id: DB-FEAT-001
       title: PostgreSQL Setup with Extensions
