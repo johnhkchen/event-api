@@ -32,6 +32,10 @@ defmodule EventAPI.Processing.RecommendationEngine do
     GenServer.call(__MODULE__, {:find_similar_events, event_id})
   end
 
+  def recommend_speakers(speaker_id) do
+    GenServer.call(__MODULE__, {:recommend_speakers, speaker_id})
+  end
+
   # GenServer callbacks
 
   @impl true
@@ -43,7 +47,7 @@ defmodule EventAPI.Processing.RecommendationEngine do
       user_profile: user_profile
     }
     
-    {:reply, result, state}
+    {:reply, {:ok, result}, state}
   end
 
   @impl true
@@ -55,6 +59,18 @@ defmodule EventAPI.Processing.RecommendationEngine do
       similar_events: []
     }
     
-    {:reply, result, state}
+    {:reply, {:ok, result}, state}
+  end
+
+  @impl true
+  def handle_call({:recommend_speakers, speaker_id}, _from, state) do
+    # TODO: Implement speaker recommendations based on co-speaking patterns and expertise overlap
+    result = %{
+      status: :success,
+      recommended_speakers: [],
+      source_speaker_id: speaker_id
+    }
+    
+    {:reply, {:ok, result}, state}
   end
 end

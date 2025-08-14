@@ -43,7 +43,7 @@ defmodule EventAPI.Processing.GraphService do
       query: query
     }
     
-    {:reply, result, state}
+    {:reply, {:ok, result}, state}
   end
 
   @impl true
@@ -51,11 +51,12 @@ defmodule EventAPI.Processing.GraphService do
     # TODO: Build speaker relationship graph
     result = %{
       status: :success,
-      speaker_id: speaker_id,
-      connections: [],
-      events: []
+      speaker_graph: %{
+        speaker_id: speaker_id,
+        connections: []
+      }
     }
     
-    {:reply, result, state}
+    {:reply, {:ok, result}, state}
   end
 end

@@ -40,10 +40,17 @@ defmodule EventAPIWeb.Router do
     get "/processing/health", ProcessingController, :health
     post "/processing/circuit-breaker/reset", ProcessingController, :reset_circuit_breaker
     
-    # Future endpoints for other services
-    # get "/graph/:query", GraphController, :query
-    # post "/deduplicate", DeduplicationController, :deduplicate
-    # get "/recommend", RecommendationController, :recommend
+    # Graph relationship endpoints
+    get "/graph/:query", Internal.GraphController, :query
+    get "/graph/speaker/:speaker_id", Internal.GraphController, :speaker
+    
+    # Entity deduplication endpoints
+    post "/deduplicate", Internal.DeduplicationController, :deduplicate
+    
+    # Recommendation engine endpoints
+    post "/recommend/events", Internal.RecommendationController, :events
+    get "/recommend/similar/:event_id", Internal.RecommendationController, :similar
+    get "/recommend/speakers/:speaker_id", Internal.RecommendationController, :speakers
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
